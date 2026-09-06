@@ -212,8 +212,8 @@
                             ${prods.length === 0 ? `<p class="text-slate-500 col-span-full">Belum ada produk. Tambahkan di menu Manajemen Stok.</p>` : prods.map(p => `
                                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
                                     <h4 class="font-bold text-white text-sm">${p.name}</h4>
-                                    <p class="text-xs text-slate-400 mt-1">Rp ${Number(p.price_idr).toLocaleString()}</p>
-                                    <p class="text-xs text-brand-400 mt-2">Stok: ${p.stock}</p>
+                                    <p class="text-xs text-slate-400 mt-1">Rp ${Number(p.price_idr || 0).toLocaleString()}</p>
+                                    <p class="text-xs text-brand-400 mt-2">Stok: ${p.stock || 0}</p>
                                 </div>
                             `).join('')}
                         </div>
@@ -227,8 +227,10 @@
         }
 
         async function renderProductStock(c) {
-            let { data: products } = await sb.from('products').select('*').order('id', {ascending: false});
+            let { data: products, error } = await sb.from('products').select('*');
+            if (error) { console.error("Error fetching products:", error); }
             products = products || [];
+
             c.innerHTML = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
@@ -237,9 +239,9 @@
                             <i class="fa-solid fa-plus mr-2"></i> Tambah Produk
                         </button>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
                         <table class="w-full text-left text-sm text-slate-300">
-                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs tracking-wider">
                                 <tr>
                                     <th class="p-4">Nama Produk</th>
                                     <th class="p-4">Kategori</th>
@@ -251,14 +253,14 @@
                             </thead>
                             <tbody class="divide-y divide-slate-800">
                                 ${products.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada produk.</td></tr>` : products.map(p => `
-                                    <tr>
+                                    <tr class="hover:bg-slate-800/40 transition">
                                         <td class="p-4 font-medium text-white">${p.name}</td>
                                         <td class="p-4">${p.category || '-'}</td>
                                         <td class="p-4">${p.size || '-'}</td>
-                                        <td class="p-4">Rp ${Number(p.price_idr).toLocaleString()}</td>
-                                        <td class="p-4 font-bold text-brand-400">${p.stock}</td>
+                                        <td class="p-4">Rp ${Number(p.price_idr || 0).toLocaleString()}</td>
+                                        <td class="p-4 font-bold text-brand-400">${p.stock || 0}</td>
                                         <td class="p-4 text-center">
-                                            <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+                                            <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
                                         </td>
                                     </tr>
                                 `).join('')}
@@ -267,22 +269,38 @@
                     </div>
                 </div>
 
-                <div id="prodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 hidden">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6">
-                        <h3 class="font-bold text-white mb-4">Tambah Produk Baru</h3>
+                <!-- MODAL TAMBAH PRODUK -->
+                <div id="prodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-lg mb-4">Tambah Produk Baru</h3>
                         <form onsubmit="saveProduct(event)" class="space-y-4">
-                            <div><label class="text-xs text-slate-300 uppercase">Nama Produk</label><input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
-                            <div class="grid grid-cols-2 gap-3">
-                                <div><label class="text-xs text-slate-300 uppercase">Kategori</label><input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
-                                <div><label class="text-xs text-slate-300 uppercase">Ukuran</label><input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                            <div>
+                                <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Nama Produk</label>
+                                <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
-                                <div><label class="text-xs text-slate-300 uppercase">Harga (IDR)</label><input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
-                                <div><label class="text-xs text-slate-300 uppercase">Stok Awal</label><input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                                <div>
+                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Kategori</label>
+                                    <input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Ukuran</label>
+                                    <input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                </div>
                             </div>
-                            <div class="flex justify-end gap-2 mt-4">
-                                <button type="button" onclick="closeModal('prodModal')" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-sm">Batal</button>
-                                <button type="submit" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Simpan</button>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Harga (IDR)</label>
+                                    <input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Stok Awal</label>
+                                    <input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2.5 mt-6">
+                                <button type="button" onclick="closeModal('prodModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm hover:bg-slate-800 transition">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition shadow-lg shadow-brand-600/30">Simpan</button>
                             </div>
                         </form>
                     </div>
@@ -292,13 +310,19 @@
 
         async function saveProduct(e) {
             e.preventDefault();
-            await sb.from('products').insert([{
-                name: document.getElementById('pName').value,
-                category: document.getElementById('pCat').value,
-                size: document.getElementById('pSize').value,
-                price_idr: parseFloat(document.getElementById('pPrice').value),
-                stock: parseInt(document.getElementById('pStock').value)
+            const { error } = await sb.from('products').insert([{
+                name: document.getElementById('pName').value.trim(),
+                category: document.getElementById('pCat').value.trim(),
+                size: document.getElementById('pSize').value.trim(),
+                price_idr: parseFloat(document.getElementById('pPrice').value) || 0,
+                stock: parseInt(document.getElementById('pStock').value) || 0
             }]);
+
+            if (error) {
+                alert('Gagal menyimpan produk: ' + error.message);
+                return;
+            }
+
             closeModal('prodModal');
             switchView(3);
         }
