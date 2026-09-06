@@ -20,6 +20,8 @@
     </script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <!-- Html2Canvas & jsPDF untuk Struk / Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -34,7 +36,7 @@
       x-data="glyceraApp()" x-init="initApp()"
       :style="currentBg ? `background-image: url('${currentBg}'); background-size: cover; background-position: center;` : ''">
 
-    <!-- OVERLAY GLASSMORPHISM BACKGROUND -->
+    <!-- OVERLAY GLASSMORPHISM -->
     <div class="fixed inset-0 bg-gray-950/80 backdrop-blur-sm pointer-events-none z-0" x-show="currentBg"></div>
 
     <div class="relative z-10 flex h-screen overflow-hidden" x-cloak>
@@ -44,8 +46,8 @@
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/95 px-4">
                 <div class="max-w-md w-full bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8 space-y-6">
                     <div class="text-center space-y-2">
-                        <h1 class="text-3xl font-extrabold tracking-wider text-white">WELCOME TO GLYCERA</h1>
-                        <p class="text-sm text-gray-400">Silakan masukkan akun dan PIN Anda</p>
+                        <h1 class="text-3xl font-extrabold tracking-wider text-white">GLYCERA POS</h1>
+                        <p class="text-sm text-gray-400">Silakan masukkan username dan PIN Anda</p>
                     </div>
 
                     <form @submit.prevent="handleLogin" class="space-y-4">
@@ -55,7 +57,7 @@
                                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">PIN</label>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1">PIN (6 Digit)</label>
                             <input type="password" x-model="loginForm.pin" maxlength="6" required 
                                    class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-pink-500">
                         </div>
@@ -66,6 +68,12 @@
                             MASUK SISTEM
                         </button>
                     </form>
+                    
+                    <!-- Supabase Connection Indicator on Login -->
+                    <div class="pt-4 border-t border-gray-800 flex items-center justify-between text-xs text-gray-400">
+                        <span>Database Status:</span>
+                        <span class="px-2 py-1 rounded font-bold" :class="isSupabaseConnected ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'" x-text="isSupabaseConnected ? 'Connected to Supabase' : 'Local / Not Connected'"></span>
+                    </div>
                 </div>
             </div>
         </template>
@@ -77,7 +85,7 @@
                 <!-- BACKDROP MOBILE SIDEBAR -->
                 <div class="fixed inset-0 z-40 bg-black/60 md:hidden" x-show="sidebarOpen" @click="sidebarOpen = false"></div>
 
-                <!-- SIDEBAR NAVIGASI (URUTAN PRESISI SESUAI PERMINTAAN) -->
+                <!-- SIDEBAR NAVIGASI (URUTAN PRESISI 8 MENU) -->
                 <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900/95 backdrop-blur-md border-r border-gray-800 transform -translate-x-full transition-transform duration-300 ease-in-out md:translate-x-0 md:static flex flex-col"
                        :class="{'translate-x-0': sidebarOpen}">
                     
@@ -102,7 +110,7 @@
 
                     <!-- User Profile & Logout -->
                     <div class="p-4 border-t border-gray-800 bg-gray-900/50">
-                        <div class="flex items-center justify-between mb-3">
+                        <div class="flex items-center justify-between mb-2">
                             <div>
                                 <p class="text-xs font-bold text-white" x-text="currentUser.name"></p>
                                 <p class="text-[10px] text-pink-400 uppercase tracking-wider" x-text="currentUser.role"></p>
@@ -110,6 +118,10 @@
                             <button @click="logout" class="p-2 text-gray-400 hover:text-red-400 transition" title="Logout">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                             </button>
+                        </div>
+                        <div class="text-[10px] text-gray-500 flex items-center justify-between">
+                            <span>DB: <span x-text="isSupabaseConnected ? 'Supabase' : 'Local'"></span></span>
+                            <button @click="syncData" class="text-pink-400 hover:underline">Sinkron</button>
                         </div>
                     </div>
                 </aside>
@@ -188,11 +200,11 @@
                                             <tr class="bg-gray-800/80 text-gray-300 uppercase font-semibold">
                                                 <th class="p-3">No</th>
                                                 <th class="p-3">Waktu & Faktur</th>
-                                                <th class="p-3">Nama Barang</th>
+                                                <th class="p-3">Nama Barang (Kategori & Ukuran)</th>
                                                 <th class="p-3 text-center">Qty</th>
                                                 <th class="p-3">Modal / HPP</th>
-                                                <th class="p-3">Harga Rupiah</th>
-                                                <th class="p-3">Harga Dollar</th>
+                                                <th class="p-3">Harga Jual Rupiah</th>
+                                                <th class="p-3">Harga Jual Dollar</th>
                                                 <th class="p-3">Diskon</th>
                                                 <th class="p-3">Total Bersih</th>
                                                 <th class="p-3">Status Pencairan</th>
@@ -214,8 +226,8 @@
                                                     <td class="p-3 font-bold" x-text="trx.currency === 'IDR' ? formatIDR(trx.totalBersih) : formatUSD(trx.totalBersih)"></td>
                                                     <td class="p-3">
                                                         <span class="px-2 py-1 rounded text-[10px] font-bold" 
-                                                              :class="trx.statusCair === 'Sudah Cair' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'"
-                                                              x-text="trx.statusCair"></span>
+                                                            :class="trx.statusCair === 'Sudah Cair' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'"
+                                                            x-text="trx.statusCair"></span>
                                                     </td>
                                                     <td class="p-3 font-bold text-white" x-text="trx.totalKotorTampil"></td>
                                                     <td class="p-3 font-bold text-pink-400" x-text="formatIDR(trx.totalBersihProfit)"></td>
@@ -234,11 +246,21 @@
                                         </tfoot>
                                     </table>
                                 </div>
+                                <!-- PAGINATION -->
+                                <div class="p-4 border-t border-gray-800 flex justify-between items-center text-xs">
+                                    <span class="text-gray-400" x-text="`Menampilkan ${transactions.length} transaksi`"></span>
+                                    <div class="flex gap-2">
+                                        <button @click="currentPage > 1 ? currentPage-- : null" class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Prev</button>
+                                        <span class="px-3 py-1 bg-pink-600 rounded text-white font-bold" x-text="currentPage"></span>
+                                        <button @click="currentPage < maxPage ? currentPage++ : null" class="px-3 py-1 bg-gray-800 rounded hover:bg-gray-700">Next</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
                         <!-- 2. PENJUALAN (KASIR) -->
                         <div x-show="currentTab === 'kasir'" class="grid grid-cols-1 lg:grid-cols-3 gap-6" x-cloak>
+                            <!-- KATALOG PRODUK -->
                             <div class="lg:col-span-2 space-y-4">
                                 <div class="bg-gray-900/90 p-4 rounded-2xl border border-gray-800 flex flex-col sm:flex-row gap-3 items-center justify-between">
                                     <div class="flex gap-3 w-full sm:w-auto">
@@ -254,13 +276,18 @@
                                     </div>
                                 </div>
 
+                                <!-- GRID PRODUK -->
                                 <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                                     <template x-for="prod in filteredProducts" :key="prod.id">
                                         <div @click="addToCart(prod)" class="bg-gray-900/90 border border-gray-800 rounded-2xl p-4 flex flex-col justify-between hover:border-pink-500 cursor-pointer transition shadow-lg group">
                                             <div>
                                                 <div class="h-28 bg-gray-800 rounded-xl mb-3 overflow-hidden flex items-center justify-center">
-                                                    <template x-if="prod.foto"><img :src="prod.foto" class="w-full h-full object-cover group-hover:scale-105 transition duration-300"></template>
-                                                    <template x-if="!prod.foto"><span class="text-xs text-gray-500 font-semibold">No Image</span></template>
+                                                    <template x-if="prod.foto">
+                                                        <img :src="prod.foto" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                                                    </template>
+                                                    <template x-if="!prod.foto">
+                                                        <span class="text-xs text-gray-500 font-semibold">No Image</span>
+                                                    </template>
                                                 </div>
                                                 <h4 class="font-bold text-white text-sm line-clamp-1" x-text="prod.nama"></h4>
                                                 <p class="text-[11px] text-pink-400 mt-0.5" x-text="prod.kategori + ' • ' + prod.ukuran"></p>
@@ -274,13 +301,14 @@
                                 </div>
                             </div>
 
+                            <!-- KERANJANG & CHECKOUT -->
                             <div class="bg-gray-900/90 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between h-[calc(100vh-7rem)]">
                                 <div class="space-y-4 overflow-y-auto flex-1 pr-1">
-                                    <h3 class="font-bold text-white text-base border-b border-gray-800 pb-3">Keranjang (<span x-text="posCurrency"></span>)</h3>
+                                    <h3 class="font-bold text-white text-base border-b border-gray-800 pb-3">Keranjang Belanja (<span x-text="posCurrency"></span>)</h3>
                                     <template x-for="(item, index) in cart" :key="index">
                                         <div class="flex items-center justify-between bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 gap-2">
                                             <div class="flex-1">
-                                                <h5 class="font-bold text-white text-xs" x-text="item.nama + ' (' + item.ukuran + ')'"></h5>
+                                                <h5 class="font-bold text-white text-xs whitespace-normal" x-text="item.nama + ' (' + item.ukuran + ')'"></h5>
                                                 <p class="text-[10px] text-pink-400 mt-0.5" x-text="posCurrency === 'IDR' ? formatIDR(item.hargaIDR) : formatUSD(item.hargaUSD)"></p>
                                             </div>
                                             <div class="flex items-center gap-2">
@@ -305,102 +333,150 @@
                                             </template>
                                         </select>
                                     </div>
+
                                     <div class="space-y-1 text-xs">
                                         <div class="flex justify-between text-gray-400">
                                             <span>Subtotal</span>
-                                            <span x-text="posCurrency === 'IDR' ? formatIDR(cartSubtotal) : formatUSD(cartSubtotal)"></span>
+                                            <span class="font-bold text-white" x-text="posCurrency === 'IDR' ? formatIDR(cartSubtotal) : formatUSD(cartSubtotal)"></span>
                                         </div>
                                         <div class="flex justify-between text-gray-400">
                                             <span>Potongan Diskon</span>
-                                            <span x-text="posCurrency === 'IDR' ? formatIDR(cartDiscountAmount) : formatUSD(cartDiscountAmount)"></span>
+                                            <span class="font-bold text-pink-400" x-text="posCurrency === 'IDR' ? formatIDR(cartDiscountAmount) : formatUSD(cartDiscountAmount)"></span>
                                         </div>
                                         <div class="flex justify-between text-base font-black text-white pt-2 border-t border-gray-800">
-                                            <span>Total Akhir</span>
-                                            <span class="text-pink-400" x-text="posCurrency === 'IDR' ? formatIDR(cartFinalTotal) : formatUSD(cartFinalTotal)"></span>
+                                            <span>Total Pembayaran</span>
+                                            <span class="text-pink-500" x-text="posCurrency === 'IDR' ? formatIDR(cartTotal) : formatUSD(cartTotal)"></span>
                                         </div>
                                     </div>
-                                    <button @click="processCheckout" :disabled="cart.length === 0" 
-                                            class="w-full py-3 bg-pink-600 hover:bg-pink-500 disabled:opacity-50 text-white font-bold rounded-xl text-sm transition shadow-lg shadow-pink-600/30">
-                                        BAYAR & CETAK STRUK
+
+                                    <button @click="checkout()" class="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl shadow-lg transition duration-200 text-sm">
+                                        PROSES PEMBAYARAN
                                     </button>
                                 </div>
                             </div>
                         </div>
 
                         <!-- 3. MANAJEMEN STOK (PRODUK JADI) -->
-                        <div x-show="currentTab === 'stok-produk'" class="space-y-6" x-cloak>
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
+                        <div x-show="currentTab === 'stok'" class="space-y-6" x-cloak>
+                            <div class="flex justify-between items-center bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
                                 <div>
                                     <h2 class="text-2xl font-black text-white">Manajemen Stok Produk Jadi</h2>
-                                    <p class="text-sm text-gray-400">Atur produk, kategori, dan resep racikan otomatis.</p>
+                                    <p class="text-sm text-gray-400">Kelola daftar parfum, harga modal, harga jual, dan stok.</p>
                                 </div>
-                                <div class="flex gap-3">
-                                    <button @click="openCategoryModal = true" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-sm transition">Kelola Kategori</button>
-                                    <button @click="openProductModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Produk</button>
-                                </div>
+                                <button @click="openProductModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Produk</button>
                             </div>
 
-                            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                                <template x-for="prod in products" :key="prod.id">
-                                    <div class="bg-gray-900/90 border border-gray-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg">
-                                        <div>
-                                            <div class="h-32 bg-gray-800 rounded-xl mb-3 overflow-hidden flex items-center justify-center">
-                                                <template x-if="prod.foto"><img :src="prod.foto" class="w-full h-full object-cover"></template>
-                                                <template x-if="!prod.foto"><span class="text-xs text-gray-500">No Image</span></template>
-                                            </div>
-                                            <h4 class="font-bold text-white text-base" x-text="prod.nama"></h4>
-                                            <p class="text-xs text-pink-400 mt-1" x-text="prod.kategori + ' • ' + prod.ukuran"></p>
-                                            <p class="text-xs text-gray-400 mt-2">HPP Modal: <span class="text-white font-bold" x-text="formatIDR(prod.hpp)"></span></p>
-                                            <p class="text-xs text-gray-400">Jual IDR: <span class="text-white font-bold" x-text="formatIDR(prod.hargaIDR)"></span></p>
-                                            <p class="text-xs text-gray-400">Stok: <span class="text-white font-bold" x-text="prod.stok"></span></p>
-                                        </div>
-                                        <div class="mt-4 flex gap-2 pt-3 border-t border-gray-800">
-                                            <button @click="editProduct(prod)" class="flex-1 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs font-bold">Edit</button>
-                                            <button @click="deleteProduct(prod.id)" class="py-1.5 px-3 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg text-xs font-bold transition">Hapus</button>
-                                        </div>
-                                    </div>
-                                </template>
+                            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse text-xs">
+                                        <thead>
+                                            <tr class="bg-gray-800/80 text-gray-300 uppercase font-semibold">
+                                                <th class="p-3">Foto</th>
+                                                <th class="p-3">Nama Produk</th>
+                                                <th class="p-3">Kategori</th>
+                                                <th class="p-3">Ukuran</th>
+                                                <th class="p-3">HPP (Modal)</th>
+                                                <th class="p-3">Harga IDR</th>
+                                                <th class="p-3">Harga USD</th>
+                                                <th class="p-3 text-center">Stok</th>
+                                                <th class="p-3 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-800 text-gray-200">
+                                            <template x-for="prod in products" :key="prod.id">
+                                                <tr>
+                                                    <td class="p-3">
+                                                        <div class="w-10 h-10 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center">
+                                                            <template x-if="prod.foto"><img :src="prod.foto" class="w-full h-full object-cover"></template>
+                                                            <template x-if="!prod.foto"><span class="text-[9px] text-gray-500">No</span></template>
+                                                        </div>
+                                                    </td>
+                                                    <td class="p-3 font-bold text-white" x-text="prod.nama"></td>
+                                                    <td class="p-3" x-text="prod.kategori"></td>
+                                                    <td class="p-3" x-text="prod.ukuran"></td>
+                                                    <td class="p-3 text-pink-300" x-text="formatIDR(prod.hpp)"></td>
+                                                    <td class="p-3" x-text="formatIDR(prod.hargaIDR)"></td>
+                                                    <td class="p-3" x-text="formatUSD(prod.hargaUSD)"></td>
+                                                    <td class="p-3 text-center font-bold" x-text="prod.stok"></td>
+                                                    <td class="p-3 text-center space-x-2">
+                                                        <button @click="editProduct(prod)" class="text-blue-400 hover:underline">Edit</button>
+                                                        <button @click="deleteProduct(prod.id)" class="text-red-400 hover:underline">Hapus</button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
 
                         <!-- 4. MANAJEMEN BAHAN BAKU & RACIKAN -->
-                        <div x-show="currentTab === 'bahan-baku'" class="space-y-6" x-cloak>
-                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
+                        <div x-show="currentTab === 'bahan_baku'" class="space-y-6" x-cloak>
+                            <div class="flex justify-between items-center bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
                                 <div>
                                     <h2 class="text-2xl font-black text-white">Manajemen Bahan Baku & Racikan</h2>
-                                    <p class="text-sm text-gray-400">Kelola stok bahan mentah dan formula resep produk.</p>
+                                    <p class="text-sm text-gray-400">Kelola stok botol, bibit parfum, alkohol, dan formula Extrait de Parfum.</p>
                                 </div>
-                                <button @click="openIngredientModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Bahan Baku</button>
+                                <div class="flex gap-3">
+                                    <button @click="openMaterialModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Bahan</button>
+                                    <button @click="openRecipeModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-sm transition">+ Racik Produk</button>
+                                </div>
                             </div>
 
-                            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                                <table class="w-full text-left border-collapse text-xs">
-                                    <thead>
-                                        <tr class="bg-gray-800/80 text-gray-300 uppercase font-semibold">
-                                            <th class="p-3">No</th>
-                                            <th class="p-3">Nama Bahan Baku</th>
-                                            <th class="p-3">Stok Tersedia</th>
-                                            <th class="p-3">Satuan</th>
-                                            <th class="p-3">Harga Beli / Satuan</th>
-                                            <th class="p-3 text-center">Aksi</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-gray-800 text-gray-200">
-                                        <template x-for="(ing, idx) in ingredients" :key="ing.id">
-                                            <tr>
-                                                <td class="p-3" x-text="idx + 1"></td>
-                                                <td class="p-3 font-bold text-white" x-text="ing.nama"></td>
-                                                <td class="p-3" x-text="ing.stok"></td>
-                                                <td class="p-3" x-text="ing.satuan"></td>
-                                                <td class="p-3" x-text="formatIDR(ing.hargaSatuan)"></td>
-                                                <td class="p-3 text-center space-x-2">
-                                                    <button @click="editIngredient(ing)" class="text-pink-400 hover:underline">Edit</button>
-                                                    <button @click="deleteIngredient(ing.id)" class="text-red-400 hover:underline">Hapus</button>
-                                                </td>
-                                            </tr>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Tabel Bahan Baku -->
+                                <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-5 space-y-4">
+                                    <h3 class="font-bold text-white text-base border-b border-gray-800 pb-3">Stok Bahan Baku</h3>
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left text-xs">
+                                            <thead>
+                                                <tr class="bg-gray-800/80 text-gray-300 uppercase">
+                                                    <th class="p-2.5">Nama Bahan</th>
+                                                    <th class="p-2.5">Stok</th>
+                                                    <th class="p-2.5">Satuan</th>
+                                                    <th class="p-2.5">Harga/Satuan</th>
+                                                    <th class="p-2.5 text-center">Aksi</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-gray-800 text-gray-200">
+                                                <template x-for="mat in rawMaterials" :key="mat.id">
+                                                    <tr>
+                                                        <td class="p-2.5 font-bold" x-text="mat.nama"></td>
+                                                        <td class="p-2.5" x-text="mat.stok"></td>
+                                                        <td class="p-2.5" x-text="mat.satuan"></td>
+                                                        <td class="p-2.5 text-pink-300" x-text="formatIDR(mat.hargaSatuan)"></td>
+                                                        <td class="p-2.5 text-center">
+                                                            <button @click="deleteMaterial(mat.id)" class="text-red-400 hover:underline">Hapus</button>
+                                                        </td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Riwayat / Kalkulasi Racikan -->
+                                <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-5 space-y-4">
+                                    <h3 class="font-bold text-white text-base border-b border-gray-800 pb-3">Riwayat Peracikan Parfum</h3>
+                                    <div class="space-y-3">
+                                        <template x-for="rec in recipes" :key="rec.id">
+                                            <div class="bg-gray-800/60 p-3 rounded-xl border border-gray-700/50 text-xs space-y-1">
+                                                <div class="flex justify-between font-bold text-white">
+                                                    <span x-text="rec.namaProduk"></span>
+                                                    <span class="text-pink-400" x-text="rec.jumlahHasil + ' Botol'"></span>
+                                                </div>
+                                                <p class="text-gray-400 text-[11px]" x-text="'Komposisi: ' + rec.komposisiDetail"></p>
+                                                <div class="flex justify-between text-[10px] text-gray-500 pt-1">
+                                                    <span x-text="rec.waktu"></span>
+                                                    <span class="font-bold text-white" x-text="'Total Modal: ' + formatIDR(rec.totalModal)"></span>
+                                                </div>
+                                            </div>
                                         </template>
-                                    </tbody>
-                                </table>
+                                        <template x-if="recipes.length === 0">
+                                            <p class="text-center text-gray-500 text-xs py-10">Belum ada riwayat peracikan.</p>
+                                        </template>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -409,43 +485,81 @@
                             <div class="flex justify-between items-center bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
                                 <div>
                                     <h2 class="text-2xl font-black text-white">Manajemen Diskon</h2>
-                                    <p class="text-sm text-gray-400">Atur potongan harga persentase atau nominal tetap.</p>
+                                    <p class="text-sm text-gray-400">Atur potongan harga persentase atau nominal tetap untuk transaksi.</p>
                                 </div>
-                                <button @click="openDiscountModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Buat Diskon</button>
+                                <button @click="openDiscountModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Diskon</button>
                             </div>
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <template x-for="disc in discounts" :key="disc.id">
-                                    <div class="bg-gray-900/90 p-5 rounded-2xl border border-gray-800 flex flex-col justify-between">
-                                        <div>
-                                            <h3 class="font-bold text-white text-base" x-text="disc.nama"></h3>
-                                            <p class="text-xl font-black text-pink-400 mt-2" x-text="disc.tipe === 'persen' ? disc.nilai + '%' : formatIDR(disc.nilai)"></p>
-                                        </div>
-                                        <div class="mt-4 flex gap-2 pt-3 border-t border-gray-800">
-                                            <button @click="deleteDiscount(disc.id)" class="w-full py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white rounded-lg text-xs font-bold transition">Hapus Diskon</button>
-                                        </div>
-                                    </div>
-                                </template>
+
+                            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-gray-800/80 text-gray-300 uppercase font-semibold">
+                                            <th class="p-3">Nama Diskon</th>
+                                            <th class="p-3">Tipe</th>
+                                            <th class="p-3">Nilai</th>
+                                            <th class="p-3 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-800 text-gray-200">
+                                        <template x-for="disc in discounts" :key="disc.id">
+                                            <tr>
+                                                <td class="p-3 font-bold text-white" x-text="disc.nama"></td>
+                                                <td class="p-3 uppercase" x-text="disc.tipe"></td>
+                                                <td class="p-3 text-pink-400 font-bold" x-text="disc.tipe === 'persen' ? disc.nilai + '%' : formatIDR(disc.nilai)"></td>
+                                                <td class="p-3 text-center">
+                                                    <button @click="deleteDiscount(disc.id)" class="text-red-400 hover:underline">Hapus</button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
                         <!-- 6. PENCAIRAN DOLLAR -->
-                        <div x-show="currentTab === 'pencairan'" class="space-y-6" x-cloak>
+                        <div x-show="currentTab === 'cair_dollar'" class="space-y-6" x-cloak>
                             <div class="flex justify-between items-center bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
                                 <div>
-                                    <h2 class="text-2xl font-black text-white">Pencairan Dollar (USD)</h2>
-                                    <p class="text-sm text-gray-400">Konversikan saldo pendapatan USD ke Rupiah ke dalam kasir.</p>
+                                    <h2 class="text-2xl font-black text-white">Pencairan Dollar (USD to IDR)</h2>
+                                    <p class="text-sm text-gray-400">Kelola kurs tukar dan catat pencairan pendapatan USD ke Rupiah.</p>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xs text-gray-400">Kurs USD saat ini: <strong class="text-white" x-text="formatIDR(usdRate)"></strong></span>
+                                    <button @click="openRateModal = true" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-sm transition">Atur Kurs</button>
                                 </div>
                             </div>
-                            <div class="bg-gray-900/90 p-6 rounded-2xl border border-gray-800 space-y-4 max-w-lg">
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-400 mb-1">Jumlah USD yang Dicairkan</label>
-                                    <input type="number" x-model="cairForm.amountUSD" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm">
+
+                            <div class="bg-gray-900/90 rounded-2xl border border-gray-800 p-6 space-y-6">
+                                <h3 class="font-bold text-white text-base border-b border-gray-800 pb-3">Daftar Transaksi USD Belum Cair</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-left text-xs">
+                                        <thead>
+                                            <tr class="bg-gray-800/80 text-gray-300 uppercase">
+                                                <th class="p-3">Waktu / Faktur</th>
+                                                <th class="p-3">Detail Barang</th>
+                                                <th class="p-3">Nominal USD</th>
+                                                <th class="p-3">Estimasi IDR (Kurs: <span x-text="formatIDR(usdRate)"></span>)</th>
+                                                <th class="p-3 text-center">Aksi Pencairan</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-gray-800 text-gray-200">
+                                            <template x-for="trx in usdTransactionsPending" :key="trx.id">
+                                                <tr>
+                                                    <td class="p-3 font-mono" x-text="trx.waktu"></td>
+                                                    <td class="p-3" x-text="trx.itemDetail"></td>
+                                                    <td class="p-3 font-bold text-white" x-text="formatUSD(trx.hargaJual * trx.qty)"></td>
+                                                    <td class="p-3 text-green-400 font-bold" x-text="formatIDR((trx.hargaJual * trx.qty) * usdRate)"></td>
+                                                    <td class="p-3 text-center">
+                                                        <button @click="cairkanDollar(trx.id)" class="px-3 py-1 bg-green-600 hover:bg-green-500 text-white rounded-lg font-bold text-xs transition">Cairkan Sekarang</button>
+                                                    </td>
+                                                </tr>
+                                            </template>
+                                            <template x-if="usdTransactionsPending.length === 0">
+                                                <tr><td colspan="5" class="p-6 text-center text-gray-500">Tidak ada transaksi USD yang belum dicairkan.</td></tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-400 mb-1">Kurs Konversi (1 USD ke IDR)</label>
-                                    <input type="number" x-model="cairForm.kurs" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm">
-                                </div>
-                                <button @click="processCairUSD" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl text-sm transition">Cairkan Sekarang</button>
                             </div>
                         </div>
 
@@ -454,9 +568,11 @@
                             <div class="flex justify-between items-center bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
                                 <div>
                                     <h2 class="text-2xl font-black text-white">Manajemen Akun & Role</h2>
-                                    <p class="text-sm text-gray-400">Kelola pengguna kasir, admin, dan hak akses.</p>
+                                    <p class="text-sm text-gray-400">Atur akses pengguna dan PIN keamanan sistem.</p>
                                 </div>
+                                <button @click="openUserModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">+ Tambah Akun</button>
                             </div>
+
                             <div class="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
                                 <table class="w-full text-left border-collapse text-xs">
                                     <thead>
@@ -464,14 +580,18 @@
                                             <th class="p-3">Nama Pengguna</th>
                                             <th class="p-3">Username</th>
                                             <th class="p-3">Role</th>
+                                            <th class="p-3 text-center">Aksi</th>
                                         </tr>
                                     </thead>
                                     <tbody class="divide-y divide-gray-800 text-gray-200">
-                                        <template x-for="usr in usersList" :key="usr.id">
+                                        <template x-for="usr in users" :key="usr.id">
                                             <tr>
                                                 <td class="p-3 font-bold text-white" x-text="usr.name"></td>
-                                                <td class="p-3" x-text="usr.username"></td>
-                                                <td class="p-3 text-pink-400 font-bold uppercase" x-text="usr.role"></td>
+                                                <td class="p-3 font-mono" x-text="usr.username"></td>
+                                                <td class="p-3 uppercase text-pink-400 font-bold" x-text="usr.role"></td>
+                                                <td class="p-3 text-center">
+                                                    <button @click="deleteUser(usr.id)" class="text-red-400 hover:underline">Hapus</button>
+                                                </td>
                                             </tr>
                                         </template>
                                     </tbody>
@@ -481,15 +601,34 @@
 
                         <!-- 8. PENGATURAN -->
                         <div x-show="currentTab === 'pengaturan'" class="space-y-6" x-cloak>
-                            <div class="bg-gray-900/90 p-6 rounded-2xl border border-gray-800">
-                                <h2 class="text-2xl font-black text-white mb-2">Pengaturan Sistem</h2>
-                                <p class="text-sm text-gray-400 mb-6">Kustomisasi tampilan latar belakang panel.</p>
-                                <div class="space-y-4 max-w-md">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-400 mb-1">URL Gambar Background Custom</label>
-                                        <input type="text" x-model="currentBg" placeholder="https://example.com/image.jpg" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-white text-sm">
+                            <div class="bg-gray-900/90 p-6 rounded-2xl border border-gray-800 space-y-6">
+                                <div>
+                                    <h2 class="text-2xl font-black text-white">Pengaturan Sistem & Supabase</h2>
+                                    <p class="text-sm text-gray-400">Konfigurasi koneksi database Supabase dan tampilan latar belakang.</p>
+                                </div>
+
+                                <div class="space-y-4 pt-4 border-t border-gray-800">
+                                    <h3 class="font-bold text-white text-base">Koneksi Supabase</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-400 mb-1">Supabase URL</label>
+                                            <input type="text" x-model="supabaseConfig.url" placeholder="https://xxxx.supabase.co" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+                                        </div>
+                                        <div>
+                                            <label class="block text-xs font-semibold text-gray-400 mb-1">Supabase Anon Key</label>
+                                            <input type="password" x-model="supabaseConfig.key" placeholder="eyJhbGciOi..." class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+                                        </div>
                                     </div>
-                                    <button @click="currentBg = ''" class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-xs font-bold">Hapus Background</button>
+                                    <button @click="saveSupabaseConfig()" class="px-6 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-xl text-sm transition">Simpan & Hubungkan Supabase</button>
+                                </div>
+
+                                <div class="space-y-4 pt-4 border-t border-gray-800">
+                                    <h3 class="font-bold text-white text-base">Kustomisasi Background (Glassmorphism)</h3>
+                                    <div>
+                                        <label class="block text-xs font-semibold text-gray-400 mb-1">URL Gambar Latar Belakang</label>
+                                        <input type="text" x-model="currentBg" placeholder="https://example.com/image.jpg" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+                                    </div>
+                                    <button @click="saveBg()" class="px-6 py-2 bg-gray-800 hover:bg-gray-700 text-white font-bold rounded-xl text-sm transition">Terapkan Background</button>
                                 </div>
                             </div>
                         </div>
@@ -500,80 +639,190 @@
         </template>
     </div>
 
-    <!-- ALPINE JS APP LOGIC -->
+    <!-- MODAL RESET LAPORAN DENGAN PIN -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80" x-show="openResetModal" x-cloak>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-bold text-white">Konfirmasi Reset Laporan</h3>
+            <p class="text-xs text-gray-400">Masukkan PIN Reset untuk menghapus seluruh riwayat transaksi.</p>
+            <input type="password" x-model="resetPinInput" maxlength="6" placeholder="Masukkan PIN" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+            <div class="flex justify-end gap-3 pt-2">
+                <button @click="openResetModal = false; resetPinInput = ''" class="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold">Batal</button>
+                <button @click="executeReset()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-bold">Reset Sekarang</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL UBAH PIN RESET -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80" x-show="openPinModal" x-cloak>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-bold text-white">Ubah PIN Reset</h3>
+            <input type="password" x-model="newResetPin" maxlength="6" placeholder="PIN Baru (6 Digit)" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+            <div class="flex justify-end gap-3 pt-2">
+                <button @click="openPinModal = false; newResetPin = ''" class="px-4 py-2 bg-gray-800 text-white rounded-xl text-xs font-bold">Batal</button>
+                <button @click="saveNewResetPin()" class="px-4 py-2 bg-pink-600 text-white rounded-xl text-xs font-bold">Simpan PIN</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL KURS USD -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/80" x-show="openRateModal" x-cloak>
+        <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 max-w-sm w-full space-y-4">
+            <h3 class="text-lg font-bold text-white">Atur Kurs USD ke IDR</h3>
+            <input type="number" x-model.number="usdRate" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-sm text-white">
+            <div class="flex justify-end gap-3 pt-2">
+                <button @click="openRateModal = false" class="px-4 py-2 bg-pink-600 text-white rounded-xl text-xs font-bold">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALPINE SCRIPT -->
     <script>
         function glyceraApp() {
             return {
-                isLoggedIn: true, // Ubah ke false jika ingin wajib login awal
+                isLoggedIn: false,
                 sidebarOpen: false,
                 currentTab: 'dashboard',
-                currentUser: { name: 'Dwi Zaldy', role: 'Administrator' },
+                
                 loginForm: { username: '', pin: '' },
                 loginError: '',
-                currentBg: '',
-                
-                // Urutan Presisi Sidebar Sesuai Arahan Anda
+                currentUser: { name: 'Dwi Zaldy', role: 'Owner' },
+
+                // Supabase config
+                supabaseConfig: {
+                    url: localStorage.getItem('supabase_url') || '',
+                    key: localStorage.getItem('supabase_key') || ''
+                },
+                supabaseClient: null,
+                isSupabaseConnected: false,
+
+                currentBg: localStorage.getItem('glycera_bg') || '',
+
                 navMenus: [
                     { id: 'dashboard', name: 'Dashboard', icon: '📊' },
-                    { id: 'kasir', name: 'Penjualan (Kasir)', icon: '🛒' },
-                    { id: 'stok-produk', name: 'Manajemen Stok (Produk Jadi)', icon: '📦' },
-                    { id: 'bahan-baku', name: 'Manajemen Bahan Baku', icon: '🧪' },
+                    { id: 'kasir', name: 'Penjualan (Kasir)', icon: '🛍️' },
+                    { id: 'stok', name: 'Manajemen Stok (Produk Jadi)', icon: '📦' },
+                    { id: 'bahan_baku', name: 'Manajemen Bahan Baku', icon: '🧪' },
                     { id: 'diskon', name: 'Manajemen Diskon', icon: '🏷️' },
-                    { id: 'pencairan', name: 'Pencairan Dollar', icon: '💵' },
-                    { id: 'akun', name: 'Akun & Role', icon: '👤' },
+                    { id: 'cair_dollar', name: 'Pencairan Dollar', icon: '💵' },
+                    { id: 'akun', name: 'Akun & Role', icon: '👥' },
                     { id: 'pengaturan', name: 'Pengaturan', icon: '⚙️' }
                 ],
 
-                // Dummy Data State
+                // Data Store
                 dashFilterType: 'harian',
                 dashDate: new Date().toISOString().split('T')[0],
-                stats: { totalIDR: 1500000, totalUSD: 45, totalCairIDR: 700000, totalProfit: 850000 },
-                
-                categories: ['Extrait de Parfum', 'Body Mist', 'Aksesoris'],
-                productFilterCategory: '',
-                posCategory: '',
-                posSearch: '',
-                posCurrency: 'IDR',
+                usdRate: 15500,
+                resetPin: localStorage.getItem('glycera_reset_pin') || '123456',
+                openResetModal: false,
+                resetPinInput: '',
+                openPinModal: false,
+                newResetPin: '',
+                openRateModal: false,
 
+                categories: ['Extrait de Parfum', 'EDP Body Spray', 'Tester'],
+                
                 products: [
-                    { id: 1, nama: 'Vanilla Dream', kategori: 'Extrait de Parfum', ukuran: '30ml', hpp: 45000, hargaIDR: 95000, hargaUSD: 10, stok: 25, foto: '' },
-                    { id: 2, nama: 'Imperial 1910', kategori: 'Extrait de Parfum', ukuran: '50ml', hpp: 75000, hargaIDR: 160000, hargaUSD: 18, stok: 15, foto: '' },
-                    { id: 3, nama: 'Java 1711', kategori: 'Extrait de Parfum', ukuran: '30ml', hpp: 50000, hargaIDR: 110000, hargaUSD: 12, stok: 30, foto: '' }
+                    { id: 1, nama: 'Vanilla Dream', kategori: 'Extrait de Parfum', ukuran: '50ml', hpp: 45000, hargaIDR: 150000, hargaUSD: 10, stok: 25, foto: '' },
+                    { id: 2, nama: 'Black Sweet', kategori: 'Extrait de Parfum', ukuran: '50ml', hpp: 48000, hargaIDR: 160000, hargaUSD: 11, stok: 20, foto: '' },
+                    { id: 3, nama: 'Imperial 1910', kategori: 'Extrait de Parfum', ukuran: '100ml', hpp: 85000, hargaIDR: 300000, hargaUSD: 20, stok: 15, foto: '' },
+                    { id: 4, nama: 'Java 1711', kategori: 'Extrait de Parfum', ukuran: '100ml', hpp: 90000, hargaIDR: 320000, hargaUSD: 22, stok: 12, foto: '' }
+                ],
+
+                rawMaterials: [
+                    { id: 1, nama: 'Bibit Vanilla', stok: 1000, satuan: 'ml', hargaSatuan: 800 },
+                    { id: 2, nama: 'Alkohol Absolute', stok: 5000, satuan: 'ml', hargaSatuan: 150 },
+                    { id: 3, nama: 'Botol 50ml Spray', stok: 100, satuan: 'pcs', hargaSatuan: 4000 }
+                ],
+
+                recipes: [],
+                discounts: [
+                    { id: 1, nama: 'Promo Launching', tipe: 'persen', nilai: 10 },
+                    { id: 2, nama: 'Potongan VIP', tipe: 'nominal', nilai: 20000 }
+                ],
+                selectedDiscountId: '',
+
+                users: [
+                    { id: 1, name: 'Dwi Zaldy', username: 'owner', role: 'Owner', pin: '123456' },
+                    { id: 2, name: 'Kasir Glycera', username: 'kasir', role: 'Kasir', pin: '654321' }
                 ],
 
                 cart: [],
-                selectedDiscountId: '',
-                discounts: [
-                    { id: 1, nama: 'Promo Launching', tipe: 'persen', nilai: 10 }
-                ],
-
-                ingredients: [
-                    { id: 1, nama: 'Bibit Vanilla', stok: 500, satuan: 'ml', hargaSatuan: 1500 },
-                    { id: 2, nama: 'Alcohol Absolute', stok: 2000, satuan: 'ml', hargaSatuan: 300 }
-                ],
-
-                usersList: [
-                    { id: 1, name: 'Dwi Zaldy', username: 'dwizaldy', role: 'Administrator' }
-                ],
+                posCategory: '',
+                posSearch: '',
+                posCurrency: 'IDR',
 
                 transactions: [],
                 currentPage: 1,
                 itemsPerPage: 10,
 
                 initApp() {
-                    // Inisialisasi awal sistem
+                    if (this.supabaseConfig.url && this.supabaseConfig.key) {
+                        try {
+                            this.supabaseClient = supabase.createClient(this.supabaseConfig.url, this.supabaseConfig.key);
+                            this.isSupabaseConnected = true;
+                            this.fetchSupabaseData();
+                        } catch (e) {
+                            console.error('Supabase init error:', e);
+                        }
+                    }
+                    this.loadLocalData();
+                },
+
+                saveSupabaseConfig() {
+                    localStorage.setItem('supabase_url', this.supabaseConfig.url);
+                    localStorage.setItem('supabase_key', this.supabaseConfig.key);
+                    if (this.supabaseConfig.url && this.supabaseConfig.key) {
+                        try {
+                            this.supabaseClient = supabase.createClient(this.supabaseConfig.url, this.supabaseConfig.key);
+                            this.isSupabaseConnected = true;
+                            alert('Berhasil terhubung ke Supabase!');
+                            this.fetchSupabaseData();
+                        } catch (e) {
+                            alert('Gagal terhubung ke Supabase: ' + e.message);
+                        }
+                    } else {
+                        this.isSupabaseConnected = false;
+                        alert('Konfigurasi disimpan secara lokal.');
+                    }
+                },
+
+                async fetchSupabaseData() {
+                    if (!this.isSupabaseConnected) return;
+                    try {
+                        let { data: trxData } = await this.supabaseClient.from('transactions').select('*');
+                        if (trxData && trxData.length > 0) {
+                            this.transactions = trxData;
+                        }
+                    } catch (e) {
+                        console.log('Supabase fetch error or table not created yet:', e);
+                    }
+                },
+
+                loadLocalData() {
+                    const savedTrx = localStorage.getItem('glycera_transactions');
+                    if (savedTrx) {
+                        this.transactions = JSON.parse(savedTrx);
+                    }
+                },
+
+                saveLocalData() {
+                    localStorage.setItem('glycera_transactions', JSON.stringify(this.transactions));
                 },
 
                 handleLogin() {
-                    if(this.loginForm.username && this.loginForm.pin) {
+                    const found = this.users.find(u => u.username === this.loginForm.username && u.pin === this.loginForm.pin);
+                    if (found) {
                         this.isLoggedIn = true;
+                        this.currentUser = found;
+                        this.loginError = '';
                     } else {
-                        this.loginError = 'Masukkan Username dan PIN yang valid.';
+                        this.loginError = 'Username atau PIN salah!';
                     }
                 },
 
                 logout() {
                     this.isLoggedIn = false;
+                    this.loginForm = { username: '', pin: '' };
                 },
 
                 formatIDR(val) {
@@ -581,7 +830,7 @@
                 },
 
                 formatUSD(val) {
-                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+                    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 }).format(val || 0);
                 },
 
                 get filteredProducts() {
@@ -594,16 +843,20 @@
 
                 addToCart(prod) {
                     let existing = this.cart.find(item => item.id === prod.id);
-                    if(existing) {
-                        existing.qty++;
+                    if (existing) {
+                        if (existing.qty < prod.stok) {
+                            existing.qty++;
+                        }
                     } else {
-                        this.cart.push({ ...prod, qty: 1 });
+                        if (prod.stok > 0) {
+                            this.cart.push({ ...prod, qty: 1 });
+                        }
                     }
                 },
 
-                updateQty(index, change) {
-                    this.cart[index].qty += change;
-                    if(this.cart[index].qty <= 0) {
+                updateQty(index, delta) {
+                    this.cart[index].qty += delta;
+                    if (this.cart[index].qty <= 0) {
                         this.cart.splice(index, 1);
                     }
                 },
@@ -616,32 +869,256 @@
                 },
 
                 get cartDiscountAmount() {
-                    if(!this.selectedDiscountId) return 0;
+                    if (!this.selectedDiscountId) return 0;
                     let disc = this.discounts.find(d => d.id == this.selectedDiscountId);
-                    if(!disc) return 0;
-                    if(disc.tipe === 'persen') {
+                    if (!disc) return 0;
+                    if (disc.tipe === 'persen') {
                         return (this.cartSubtotal * disc.nilai) / 100;
+                    } else {
+                        return Math.min(this.cartSubtotal, disc.nilai);
                     }
-                    return disc.nilai;
                 },
 
-                get cartFinalTotal() {
+                get cartTotal() {
                     return Math.max(0, this.cartSubtotal - this.cartDiscountAmount);
                 },
 
-                processCheckout() {
-                    alert('Transaksi berhasil diproses!');
+                checkout() {
+                    if (this.cart.length === 0) return;
+                    
+                    let now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+                    let faktur = 'INV/' + Date.now().toString().slice(-6);
+
+                    this.cart.forEach(item => {
+                        let hargaJual = this.posCurrency === 'IDR' ? item.hargaIDR : item.hargaUSD;
+                        let hppTotal = item.hpp * item.qty;
+                        let totalBersih = (hargaJual * item.qty) - (this.cartDiscountAmount / this.cart.length);
+                        let totalKotorTampil = this.posCurrency === 'IDR' ? this.formatIDR(hargaJual * item.qty) : this.formatUSD(hargaJual * item.qty);
+                        let totalBersihProfit = this.posCurrency === 'IDR' ? (totalBersih - hppTotal) : ((totalBersih * this.usdRate) - hppTotal);
+
+                        let newTrx = {
+                            id: Date.now() + Math.random(),
+                            waktu: now + ' (' + faktur + ')',
+                            itemDetail: `${item.nama} (${item.kategori} • ${item.ukuran})`,
+                            qty: item.qty,
+                            hppTotal: hppTotal,
+                            hargaJual: hargaJual,
+                            currency: this.posCurrency,
+                            diskonVal: this.selectedDiscountId ? 'Ada' : '-',
+                            totalBersih: totalBersih,
+                            statusCair: this.posCurrency === 'USD' ? 'Belum Cair' : 'Sudah Cair',
+                            totalKotorTampil: totalKotorTampil,
+                            totalBersihProfit: totalBersihProfit
+                        };
+
+                        this.transactions.unshift(newTrx);
+
+                        // Kurangi stok produk
+                        let p = this.products.find(prod => prod.id === item.id);
+                        if (p) p.stok -= item.qty;
+                    });
+
                     this.cart = [];
+                    this.selectedDiscountId = '';
+                    this.saveLocalData();
+                    alert('Transaksi berhasil diproses!');
+                    this.currentTab = 'dashboard';
                 },
 
-                loadDashboardData() {
-                    // Refresh data dashboard
+                get usdTransactionsPending() {
+                    return this.transactions.filter(t => t.currency === 'USD' && t.statusCair === 'Belum Cair');
+                },
+
+                cairkanDollar(id) {
+                    let trx = this.transactions.find(t => t.id === id);
+                    if (trx) {
+                        trx.statusCair = 'Sudah Cair';
+                        this.saveLocalData();
+                    }
+                },
+
+                get stats() {
+                    let totalIDR = 0;
+                    let totalUSD = 0;
+                    let totalCairIDR = 0;
+                    let totalProfit = 0;
+
+                    this.transactions.forEach(t => {
+                        if (t.currency === 'IDR') {
+                            totalIDR += (t.hargaJual * t.qty);
+                        } else {
+                            totalUSD += (t.hargaJual * t.qty);
+                            if (t.statusCair === 'Sudah Cair') {
+                                totalCairIDR += (t.hargaJual * t.qty) * this.usdRate;
+                            }
+                        }
+                        totalProfit += t.totalBersihProfit;
+                    });
+
+                    return { totalIDR, totalUSD, totalCairIDR, totalProfit };
+                },
+
+                get grandTotalKotor() {
+                    return this.transactions.reduce((sum, t) => {
+                        let val = t.currency === 'IDR' ? (t.hargaJual * t.qty) : ((t.hargaJual * t.qty) * this.usdRate);
+                        return sum + val;
+                    }, 0);
+                },
+
+                get grandTotalBersih() {
+                    return this.transactions.reduce((sum, t) => sum + t.totalBersihProfit, 0);
+                },
+
+                get startIndex() {
+                    return (this.currentPage - 1) * this.itemsPerPage;
+                },
+
+                get paginatedTransactions() {
+                    let start = this.startIndex;
+                    return this.transactions.slice(start, start + this.itemsPerPage);
+                },
+
+                get maxPage() {
+                    return Math.ceil(this.transactions.length / this.itemsPerPage) || 1;
+                },
+
+                executeReset() {
+                    if (this.resetPinInput === this.resetPin) {
+                        this.transactions = [];
+                        this.saveLocalData();
+                        this.openResetModal = false;
+                        this.resetPinInput = '';
+                        alert('Laporan berhasil direset.');
+                    } else {
+                        alert('PIN Reset salah!');
+                    }
+                },
+
+                saveNewResetPin() {
+                    if (this.newResetPin.length === 6) {
+                        this.resetPin = this.newResetPin;
+                        localStorage.setItem('glycera_reset_pin', this.resetPin);
+                        this.openPinModal = false;
+                        this.newResetPin = '';
+                        alert('PIN Reset berhasil diubah.');
+                    } else {
+                        alert('PIN harus 6 digit.');
+                    }
+                },
+
+                saveBg() {
+                    localStorage.setItem('glycera_bg', this.currentBg);
+                    alert('Background berhasil diterapkan.');
+                },
+
+                openProductModal() {
+                    let nama = prompt('Nama Produk:');
+                    if (!nama) return;
+                    let kategori = prompt('Kategori (Extrait de Parfum / EDP Body Spray / Tester):', 'Extrait de Parfum');
+                    let ukuran = prompt('Ukuran (contoh: 50ml):', '50ml');
+                    let hpp = parseFloat(prompt('HPP / Modal (angka):', '45000')) || 0;
+                    let hargaIDR = parseFloat(prompt('Harga IDR (angka):', '150000')) || 0;
+                    let hargaUSD = parseFloat(prompt('Harga USD (angka):', '10')) || 0;
+                    let stok = parseInt(prompt('Stok awal:', '20')) || 0;
+                    let foto = prompt('URL Foto (opsional):', '');
+
+                    this.products.push({
+                        id: Date.now(),
+                        nama, kategori, ukuran, hpp, hargaIDR, hargaUSD, stok, foto
+                    });
+                    alert('Produk berhasil ditambahkan!');
+                },
+
+                editProduct(prod) {
+                    prod.nama = prompt('Edit Nama Produk:', prod.nama) || prod.nama;
+                    prod.hargaIDR = parseFloat(prompt('Edit Harga IDR:', prod.hargaIDR)) || prod.hargaIDR;
+                    prod.stok = parseInt(prompt('Edit Stok:', prod.stok)) || prod.stok;
+                    alert('Produk diperbarui!');
+                },
+
+                deleteProduct(id) {
+                    if (confirm('Hapus produk ini?')) {
+                        this.products = this.products.filter(p => p.id !== id);
+                    }
+                },
+
+                openMaterialModal() {
+                    let nama = prompt('Nama Bahan Baku:');
+                    if (!nama) return;
+                    let stok = parseFloat(prompt('Jumlah Stok:', '1000')) || 0;
+                    let satuan = prompt('Satuan (ml / pcs / gram):', 'ml');
+                    let hargaSatuan = parseFloat(prompt('Harga per Satuan:', '150')) || 0;
+
+                    this.rawMaterials.push({ id: Date.now(), nama, stok, satuan, hargaSatuan });
+                    alert('Bahan baku ditambahkan!');
+                },
+
+                deleteMaterial(id) {
+                    if (confirm('Hapus bahan baku ini?')) {
+                        this.rawMaterials = this.rawMaterials.filter(m => m.id !== id);
+                    }
+                },
+
+                openRecipeModal() {
+                    let namaProduk = prompt('Nama Produk Hasil Racikan:', 'Custom Extrait de Parfum');
+                    if (!namaProduk) return;
+                    let jumlahHasil = parseInt(prompt('Jumlah Botol yang Dihasilkan:', '10')) || 1;
+                    let totalModal = parseFloat(prompt('Total Modal Bahan Baku (IDR):', '450000')) || 0;
+                    let komposisiDetail = prompt('Detail Komposisi (misal: Bibit 200ml + Alkohol 800ml + 10 Botol):', 'Bibit Vanilla 200ml + Alkohol 800ml');
+
+                    this.recipes.unshift({
+                        id: Date.now(),
+                        namaProduk,
+                        jumlahHasil,
+                        totalModal,
+                        komposisiDetail,
+                        waktu: new Date().toLocaleString()
+                    });
+                    alert('Racikan berhasil dicatat!');
+                },
+
+                openDiscountModal() {
+                    let nama = prompt('Nama Diskon:');
+                    if (!nama) return;
+                    let tipe = prompt('Tipe Diskon (persen / nominal):', 'persen');
+                    let nilai = parseFloat(prompt('Nilai Diskon (angka):', '10')) || 0;
+
+                    this.discounts.push({ id: Date.now(), nama, tipe, nilai });
+                    alert('Diskon berhasil ditambahkan!');
+                },
+
+                deleteDiscount(id) {
+                    if (confirm('Hapus diskon ini?')) {
+                        this.discounts = this.discounts.filter(d => d.id !== id);
+                    }
+                },
+
+                openUserModal() {
+                    let name = prompt('Nama Lengkap:');
+                    if (!name) return;
+                    let username = prompt('Username:');
+                    let role = prompt('Role (Owner / Kasir):', 'Kasir');
+                    let pin = prompt('PIN (6 Digit):', '123456');
+
+                    this.users.push({ id: Date.now(), name, username, role, pin });
+                    alert('Akun berhasil ditambahkan!');
+                },
+
+                deleteUser(id) {
+                    if (confirm('Hapus akun ini?')) {
+                        this.users = this.users.filter(u => u.id !== id);
+                    }
                 },
 
                 exportToPDF() {
                     const { jsPDF } = window.jspdf;
-                    const doc = new jsPDF();
-                    doc.text("Laporan Transaksi GLYCERA", 14, 20);
+                    let doc = new jsPDF();
+                    doc.text("Laporan Transaksi GLYCERA POS", 14, 20);
+                    let y = 30;
+                    this.transactions.slice(0, 20).forEach((t, i) => {
+                        doc.text(`${i+1}. ${t.waktu} - ${t.itemDetail} (${t.currency})`, 14, y);
+                        y += 10;
+                    });
                     doc.save("laporan-glycera.pdf");
                 }
             }
