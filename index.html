@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLYCERA POS - Manajemen & Kasir Realtime</title>
+    <title>GLYCERA POS - Sistem Kasir & Manajemen Terintegrasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,31 +20,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+    <style>body { font-family: 'Inter', sans-serif; }</style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
-
-    <div id="configModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 p-4 hidden">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
-            <h2 class="text-xl font-bold text-white mb-2"><i class="fa-solid fa-database text-brand-500 mr-2"></i> Konfigurasi Supabase</h2>
-            <p class="text-sm text-slate-400 mb-4">Masukkan Project URL dan Publishable Key Supabase Anda.</p>
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Supabase URL</label>
-                    <input type="text" id="sbUrlInput" value="https://mqscicebveyypntbxswe.supabase.co" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold uppercase text-slate-300 mb-1">Publishable Key</label>
-                    <input type="password" id="sbKeyInput" value="sb_publishable_-jH6NUxDK-8TOvno3oo8qw_Q_Kv6bwG" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
-                </div>
-                <button onclick="saveSupabaseConfig()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition text-sm">Simpan & Hubungkan</button>
-            </div>
-        </div>
-    </div>
 
     <div id="loginScreen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/90 p-4">
         <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl relative">
@@ -52,32 +30,30 @@
                 <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-600/20 text-brand-500 text-2xl font-bold mb-4">
                     <i class="fa-solid fa-gem"></i>
                 </div>
-                <h1 class="text-2xl font-bold tracking-wider text-white">WELCOME TO GLYCERA</h1>
-                <p class="text-sm text-slate-400 mt-1">Sistem Manajemen Stok & Kasir Terintegrasi</p>
+                <h1 class="text-2xl font-bold tracking-wider text-white">GLYCERA POS</h1>
+                <p class="text-sm text-slate-400 mt-1">Silakan masuk dengan akun Anda</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-5">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Username</label>
-                    <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition">
+                    <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="admin">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">PIN</label>
-                    <input type="password" id="loginPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="••••">
+                    <input type="password" id="loginPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="1234">
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-600/30">
                     MASUK APLIKASI
                 </button>
             </form>
-            <div class="mt-6 text-center">
-                <button onclick="openConfigModal()" class="text-xs text-slate-500 hover:text-slate-300 underline">Ubah Konfigurasi Supabase</button>
-            </div>
+            <p class="text-xs text-slate-500 text-center mt-6">Default: Username: <b>admin</b> | PIN: <b>1234</b></p>
         </div>
     </div>
 
     <div id="appLayout" class="flex h-screen overflow-hidden hidden">
         <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-20">
             <div class="p-5 border-b border-slate-800 flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold shadow-md shadow-brand-600/40">G</div>
+                <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold shadow-md">G</div>
                 <div>
                     <h2 class="font-bold text-white tracking-wide">GLYCERA</h2>
                     <p class="text-xs text-slate-400" id="currentRoleDisplay">Role: OWNER</p>
@@ -96,33 +72,19 @@
                 <h2 id="pageTitle" class="text-lg font-bold text-white">Dashboard</h2>
                 <div class="flex items-center gap-4">
                     <span id="loggedInUserLabel" class="text-sm font-medium text-slate-300"></span>
-                    <button onclick="toggleThemeMode()" class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white">
-                        <i class="fa-solid fa-moon" id="themeIcon"></i>
+                    <button onclick="document.documentElement.classList.toggle('dark')" class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white">
+                        <i class="fa-solid fa-moon"></i>
                     </button>
                 </div>
             </header>
-
             <div class="flex-1 overflow-y-auto p-6" id="viewContainer"></div>
         </main>
     </div>
 
     <script>
-        const SUPABASE_URL = localStorage.getItem('gly_sb_url') || 'https://mqscicebveyypntbxswe.supabase.co';
-        const SUPABASE_KEY = localStorage.getItem('gly_sb_key') || 'sb_publishable_-jH6NUxDK-8TOvno3oo8qw_Q_Kv6bwG';
-        let supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        function saveSupabaseConfig() {
-            const url = document.getElementById('sbUrlInput').value.trim();
-            const key = document.getElementById('sbKeyInput').value.trim();
-            if(!url || !key) { alert('URL dan Key wajib diisi!'); return; }
-            localStorage.setItem('gly_sb_url', url);
-            localStorage.setItem('gly_sb_key', key);
-            location.reload();
-        }
-
-        function openConfigModal() {
-            document.getElementById('configModal').classList.remove('hidden');
-        }
+        const SUPABASE_URL = 'https://mqscicebveyypntbxswe.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_-jH6NUxDK-8TOvno3oo8qw_Q_Kv6bwG';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         const menuList = [
             { id: 1, name: 'Dashboard', icon: 'fa-chart-pie' },
@@ -142,26 +104,15 @@
             if (currentUser) {
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('appLayout').classList.remove('hidden');
-                await seedDefaultData();
                 setupApp();
             }
         });
-
-        async function seedDefaultData() {
-            let { data } = await supabaseClient.from('app_users').select('*');
-            if(!data || data.length === 0) {
-                await supabaseClient.from('app_users').insert([
-                    { name: 'Owner Utama', username: 'admin', pin: '1234', role: 'OWNER', bg: '' }
-                ]);
-            }
-        }
 
         async function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('loginUser').value.trim();
             const p = document.getElementById('loginPin').value.trim();
-            
-            let { data, error } = await supabaseClient.from('app_users').select('*').eq('username', u).eq('pin', p);
+            let { data, error } = await sb.from('app_users').select('*').eq('username', u).eq('pin', p);
             if(data && data.length > 0) {
                 currentUser = data[0];
                 localStorage.setItem('gly_current_user', JSON.stringify(currentUser));
@@ -169,7 +120,7 @@
                 document.getElementById('appLayout').classList.remove('hidden');
                 setupApp();
             } else {
-                alert('Username atau PIN salah!');
+                alert('Username atau PIN salah! Pastikan database sudah di-setup.');
             }
         }
 
@@ -181,108 +132,213 @@
         function setupApp() {
             document.getElementById('loggedInUserLabel').innerText = `${currentUser.name} (${currentUser.role})`;
             document.getElementById('currentRoleDisplay').innerText = `Role: ${currentUser.role}`;
-            
-            if (currentUser.bg) {
-                const mainArea = document.getElementById('mainContentArea');
-                mainArea.style.backgroundImage = `url('${currentUser.bg}')`;
-                mainArea.style.backgroundSize = 'cover';
-            }
-
             renderSidebar();
             switchView(1);
         }
 
         function renderSidebar() {
-            const nav = document.getElementById('sidebarNav');
-            nav.innerHTML = menuList.map(m => {
-                const active = currentActiveMenu === m.id;
-                return `
-                    <button onclick="switchView(${m.id})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${active ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}">
-                        <i class="fa-solid ${m.icon} w-5"></i> ${m.name}
-                    </button>
-                `;
-            }).join('');
+            document.getElementById('sidebarNav').innerHTML = menuList.map(m => `
+                <button onclick="switchView(${m.id})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${currentActiveMenu === m.id ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}">
+                    <i class="fa-solid ${m.icon} w-5"></i> ${m.name}
+                </button>
+            `).join('');
         }
 
         async function switchView(id) {
             currentActiveMenu = id;
             renderSidebar();
-            const titleObj = menuList.find(m => m.id === id);
-            document.getElementById('pageTitle').innerText = titleObj ? titleObj.name : '';
-            
+            document.getElementById('pageTitle').innerText = menuList.find(m => m.id === id).name;
             const container = document.getElementById('viewContainer');
-            container.innerHTML = `<div class="flex items-center justify-center p-12 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data dari Supabase...</div>`;
-            
+            container.innerHTML = `<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data dari Supabase...</div>`;
+
             try {
-                if (id === 1) await renderDashboardView(container);
-                else if (id === 2) await renderCashierView(container);
-                else if (id === 3) await renderProductStockView(container);
-                else if (id === 4) await renderRawMaterialView(container);
-                else if (id === 5) await renderDiscountView(container);
-                else if (id === 6) await renderDollarView(container);
-                else if (id === 7) await renderAccountRoleView(container);
-                else if (id === 8) await renderSettingsView(container);
+                if (id === 1) await renderDashboard(container);
+                else if (id === 2) await renderCashier(container);
+                else if (id === 3) await renderProductStock(container);
+                else if (id === 4) await renderRawMaterials(container);
+                else if (id === 5) await renderDiscounts(container);
+                else if (id === 6) await renderDollar(container);
+                else if (id === 7) await renderAccounts(container);
+                else if (id === 8) await renderSettings(container);
             } catch (err) {
-                console.error(err);
-                container.innerHTML = `<div class="p-6 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400">Error memuat modul: ${err.message}</div>`;
+                container.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Error memuat modul: ${err.message}</div>`;
             }
         }
 
-        function toggleThemeMode() {
-            document.documentElement.classList.toggle('dark');
-        }
-
-        // --- 1. DASHBOARD VIEW ---
-        async function renderDashboardView(container) {
-            let { data: txs } = await supabaseClient.from('transactions').select('*').order('id', {ascending: false});
-            txs = txs || [];
-            container.innerHTML = `
+        // --- 1. DASHBOARD ---
+        async function renderDashboard(c) {
+            let { data: txs } = await sb.from('transactions').select('*');
+            let { data: prods } = await sb.from('products').select('*');
+            txs = txs || []; prods = prods || [];
+            c.innerHTML = `
                 <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Transaksi</p>
-                            <h3 class="text-2xl font-bold text-white mt-1">${txs.length}</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Produk</p>
+                            <h3 class="text-3xl font-bold text-white mt-1">${prods.length}</h3>
                         </div>
-                    </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-                        <h3 class="text-base font-bold text-white mb-4">Riwayat Transaksi Realtime</h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-sm text-slate-300">
-                                <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
-                                    <tr>
-                                        <th class="p-3">No</th>
-                                        <th class="p-3">Waktu & Faktur</th>
-                                        <th class="p-3">Barang</th>
-                                        <th class="p-3">Qty</th>
-                                        <th class="p-3">Total Bersih</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-800">
-                                    ${txs.length === 0 ? `<tr><td colspan="5" class="p-4 text-center text-slate-500">Belum ada data transaksi</td></tr>` : txs.map((t, idx) => `
-                                        <tr>
-                                            <td class="p-3">${idx+1}</td>
-                                            <td class="p-3">${t.date} (${t.invoice})</td>
-                                            <td class="p-3">${t.items_summary}</td>
-                                            <td class="p-3">${t.total_qty}</td>
-                                            <td class="p-3">${t.currency === 'IDR' ? 'Rp ' + Number(t.grand_total).toLocaleString() : '$ ' + Number(t.grand_total).toFixed(2)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
+                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Transaksi</p>
+                            <h3 class="text-3xl font-bold text-white mt-1">${txs.length}</h3>
                         </div>
                     </div>
                 </div>
             `;
         }
 
-        // Modul placeholder interaktif
-        async function renderCashierView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Penjualan (Kasir)</h3><p class="text-slate-400">Terhubung ke database Supabase untuk transaksi & pemotongan stok.</p></div>`; }
-        async function renderProductStockView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Manajemen Stok (Produk Jadi)</h3><p class="text-slate-400">Sinkronisasi produk, kategori, ukuran, dan HPP otomatis.</p></div>`; }
-        async function renderRawMaterialView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Manajemen Bahan Baku & Racikan</h3><p class="text-slate-400">Kalkulasi harga per-unit dan resep produk.</p></div>`; }
-        async function renderDiscountView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Manajemen Diskon</h3><p class="text-slate-400">Pengaturan potongan harga persentase atau nominal.</p></div>`; }
-        async function renderDollarView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Pencairan Dollar (USD to IDR)</h3><p class="text-slate-400">Akumulasi saldo dollar dan konversi kurs.</p></div>`; }
-        async function renderAccountRoleView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Akun & Role Staff</h3><p class="text-slate-400">Manajemen hak akses staff multi-device.</p></div>`; }
-        async function renderSettingsView(c) { c.innerHTML = `<div class="bg-slate-900 p-6 rounded-2xl border border-slate-800"><h3 class="text-lg font-bold text-white mb-2">Pengaturan & Background Akun</h3><p class="text-slate-400">Kustomisasi tema dan background mandiri.</p></div>`; }
+        // --- 2. KASIR ---
+        async function renderCashier(c) {
+            let { data: prods } = await sb.from('products').select('*');
+            prods = prods || [];
+            c.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                        <h3 class="font-bold text-white mb-4">Pilih Produk</h3>
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            ${prods.length === 0 ? `<p class="text-slate-500 col-span-full">Belum ada produk. Tambahkan di menu Manajemen Stok.</p>` : prods.map(p => `
+                                <div onclick="alert('Fitur keranjang aktif untuk: ${p.name}')" class="bg-slate-950 border border-slate-800 p-4 rounded-xl cursor-pointer hover:border-brand-500 transition">
+                                    <h4 class="font-bold text-white text-sm">${p.name}</h4>
+                                    <p class="text-xs text-slate-400 mt-1">Rp ${Number(p.price_idr).toLocaleString()}</p>
+                                    <p class="text-xs text-brand-400 mt-2">Stok: ${p.stock}</p>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                        <h3 class="font-bold text-white mb-4">Keranjang Belanja</h3>
+                        <p class="text-slate-500 text-sm">Belum ada item dipilih.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 3. MANAJEMEN STOK PRODUK ---
+        async function renderProductStock(c) {
+            let { data: products } = await sb.from('products').select('*').order('id', {ascending: false});
+            products = products || [];
+            c.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-white">Daftar Produk Jadi</h3>
+                        <button onclick="openModal('prodModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-brand-600/30">
+                            <i class="fa-solid fa-plus mr-2"></i> Tambah Produk
+                        </button>
+                    </div>
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                        <table class="w-full text-left text-sm text-slate-300">
+                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs">
+                                <tr>
+                                    <th class="p-4">Nama Produk</th>
+                                    <th class="p-4">Kategori</th>
+                                    <th class="p-4">Ukuran</th>
+                                    <th class="p-4">Harga (IDR)</th>
+                                    <th class="p-4">Stok</th>
+                                    <th class="p-4 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-800">
+                                ${products.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada produk.</td></tr>` : products.map(p => `
+                                    <tr>
+                                        <td class="p-4 font-medium text-white">${p.name}</td>
+                                        <td class="p-4">${p.category || '-'}</td>
+                                        <td class="p-4">${p.size || '-'}</td>
+                                        <td class="p-4">Rp ${Number(p.price_idr).toLocaleString()}</td>
+                                        <td class="p-4 font-bold text-brand-400">${p.stock}</td>
+                                        <td class="p-4 text-center">
+                                            <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="prodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6">
+                        <h3 class="font-bold text-white mb-4">Tambah Produk Baru</h3>
+                        <form onsubmit="saveProduct(event)" class="space-y-4">
+                            <div><label class="text-xs text-slate-300 uppercase">Nama Produk</label><input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="text-xs text-slate-300 uppercase">Kategori</label><input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                                <div><label class="text-xs text-slate-300 uppercase">Ukuran</label><input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div><label class="text-xs text-slate-300 uppercase">Harga (IDR)</label><input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                                <div><label class="text-xs text-slate-300 uppercase">Stok Awal</label><input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm mt-1"></div>
+                            </div>
+                            <div class="flex justify-end gap-2 mt-4">
+                                <button type="button" onclick="closeModal('prodModal')" class="px-4 py-2 rounded-xl border border-slate-700 text-slate-300 text-sm">Batal</button>
+                                <button type="submit" class="px-4 py-2 rounded-xl bg-brand-600 text-white text-sm font-semibold">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            await sb.from('products').insert([{
+                name: document.getElementById('pName').value,
+                category: document.getElementById('pCat').value,
+                size: document.getElementById('pSize').value,
+                price_idr: parseFloat(document.getElementById('pPrice').value),
+                stock: parseInt(document.getElementById('pStock').value)
+            }]);
+            closeModal('prodModal');
+            switchView(3);
+        }
+
+        // --- 4. BAHAN BAKU ---
+        async function renderRawMaterials(c) {
+            let { data: raw } = await sb.from('raw_materials').select('*');
+            raw = raw || [];
+            c.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                    <h3 class="font-bold text-white mb-4">Manajemen Bahan Baku (${raw.length} item)</h3>
+                    <p class="text-slate-400 text-sm">Modul bahan baku aktif dan terhubung ke database.</p>
+                </div>
+            `;
+        }
+
+        // --- 5. DISKON ---
+        async function renderDiscounts(c) {
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Diskon</h3><p class="text-slate-400 text-sm">Atur potongan harga persentase atau nominal.</p></div>`;
+        }
+
+        // --- 6. PENCAIRAN DOLLAR ---
+        async function renderDollar(c) {
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pencairan Dollar (USD to IDR)</h3><p class="text-slate-400 text-sm">Konversi kurs dan akumulasi saldo dollar.</p></div>`;
+        }
+
+        // --- 7. AKUN & ROLE ---
+        async function renderAccounts(c) {
+            let { data: users } = await sb.from('app_users').select('*');
+            users = users || [];
+            c.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                    <h3 class="font-bold text-white mb-4">Daftar Akun Staff (${users.length})</h3>
+                    <div class="space-y-2">
+                        ${users.map(u => `<div class="p-3 bg-slate-950 border border-slate-800 rounded-xl flex justify-between items-center"><span class="text-white font-medium">${u.name} (${u.username})</span><span class="text-xs bg-brand-600/20 text-brand-400 px-2 py-1 rounded">${u.role}</span></div>`).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 8. PENGATURAN ---
+        async function renderSettings(c) {
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pengaturan Sistem</h3><p class="text-slate-400 text-sm">Kustomisasi tema dan preferensi aplikasi.</p></div>`;
+        }
+
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        async function deleteRow(table, id) {
+            if(confirm('Hapus data ini?')) {
+                await sb.from(table).delete().eq('id', id);
+                switchView(currentActiveMenu);
+            }
+        }
     </script>
 </body>
 </html>
