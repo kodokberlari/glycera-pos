@@ -37,11 +37,11 @@
             <form onsubmit="handleLogin(event)" class="space-y-5">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Username</label>
-                    <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="admin">
+                    <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="admin" value="admin">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">PIN</label>
-                    <input type="password" id="loginPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="1234">
+                    <input type="password" id="loginPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="1234" value="1234">
                 </div>
                 <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-600/30">
                     MASUK APLIKASI
@@ -118,7 +118,6 @@
             const u = document.getElementById('loginUser').value.trim();
             const p = document.getElementById('loginPin').value.trim();
             
-            // Bypass pengaman langsung untuk akun admin default agar pasti tembus
             if(u === 'admin' && p === '1234') {
                 currentUser = { name: 'Owner Utama', username: 'admin', role: 'OWNER' };
                 localStorage.setItem('gly_current_user', JSON.stringify(currentUser));
@@ -136,7 +135,7 @@
                 document.getElementById('appLayout').classList.remove('hidden');
                 setupApp();
             } else {
-                alert('Username atau PIN salah! Pastikan database sudah di-setup.');
+                alert('Username atau PIN salah!');
             }
         }
 
@@ -177,7 +176,8 @@
                 else if (id === 7) await renderAccounts(container);
                 else if (id === 8) await renderSettings(container);
             } catch (err) {
-                container.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Error: ${err.message}</div>`;
+                console.error("View Error:", err);
+                container.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Terjadi kesalahan: ${err.message}</div>`;
             }
         }
 
@@ -189,7 +189,7 @@
                 <div class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Produk</p>
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Produk Jadi</p>
                             <h3 class="text-3xl font-bold text-white mt-1">${prods.length}</h3>
                         </div>
                         <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
@@ -209,7 +209,7 @@
                     <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
                         <h3 class="font-bold text-white mb-4">Pilih Produk</h3>
                         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            ${prods.length === 0 ? `<p class="text-slate-500 col-span-full">Belum ada produk. Tambahkan di menu Manajemen Stok.</p>` : prods.map(p => `
+                            ${prods.length === 0 ? `<p class="text-slate-500 col-span-full">Belum ada produk.</p>` : prods.map(p => `
                                 <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
                                     <h4 class="font-bold text-white text-sm">${p.name}</h4>
                                     <p class="text-xs text-slate-400 mt-1">Rp ${Number(p.price_idr || 0).toLocaleString()}</p>
@@ -226,15 +226,19 @@
             `;
         }
 
+        // --- MANAJEMEN STOK PRODUK JADI ---
         async function renderProductStock(c) {
             let { data: products, error } = await sb.from('products').select('*');
-            if (error) { console.error("Error fetching products:", error); }
+            if (error) {
+                c.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Error: ${error.message}</div>`;
+                return;
+            }
             products = products || [];
 
             c.innerHTML = `
                 <div class="space-y-6">
                     <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-white">Daftar Produk Jadi</h3>
+                        <h3 class="font-bold text-white">Daftar Produk Jadi (${products.length})</h3>
                         <button onclick="openModal('prodModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-brand-600/30">
                             <i class="fa-solid fa-plus mr-2"></i> Tambah Produk
                         </button>
@@ -276,26 +280,26 @@
                         <form onsubmit="saveProduct(event)" class="space-y-4">
                             <div>
                                 <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Nama Produk</label>
-                                <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="Misal: Vanilla Dream">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Kategori</label>
-                                    <input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                    <input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="Extrait de Parfum">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Ukuran</label>
-                                    <input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                    <input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="50ml">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Harga (IDR)</label>
-                                    <input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                    <input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="150000">
                                 </div>
                                 <div>
                                     <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Stok Awal</label>
-                                    <input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500">
+                                    <input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="10">
                                 </div>
                             </div>
                             <div class="flex justify-end gap-2.5 mt-6">
@@ -332,21 +336,36 @@
             raw = raw || [];
             c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Bahan Baku</h3><p class="text-slate-400 text-sm">Total bahan baku: ${raw.length} item</p></div>`;
         }
-        async function renderDiscounts(c) { c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Diskon</h3><p class="text-slate-400 text-sm">Modul diskon aktif.</p></div>`; }
-        async function renderDollar(c) { c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pencairan Dollar</h3><p class="text-slate-400 text-sm">Modul konversi USD ke IDR aktif.</p></div>`; }
+        async function renderDiscounts(c) {
+            let { data: disc } = await sb.from('discounts').select('*');
+            disc = disc || [];
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Diskon</h3><p class="text-slate-400 text-sm">Total diskon: ${disc.length}</p></div>`;
+        }
+        async function renderDollar(c) {
+            let { data: wd } = await sb.from('withdrawals').select('*');
+            wd = wd || [];
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pencairan Dollar</h3><p class="text-slate-400 text-sm">Riwayat pencairan: ${wd.length}</p></div>`;
+        }
         async function renderAccounts(c) {
             let { data: users } = await sb.from('app_users').select('*');
             users = users || [];
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Akun Staff</h3><p class="text-slate-400 text-sm">Total user terdaftar: ${users.length}</p></div>`;
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Akun & Role</h3><p class="text-slate-400 text-sm">Total user terdaftar: ${users.length}</p></div>`;
         }
-        async function renderSettings(c) { c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pengaturan</h3><p class="text-slate-400 text-sm">Konfigurasi sistem.</p></div>`; }
+        async function renderSettings(c) {
+            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pengaturan</h3><p class="text-slate-400 text-sm">Konfigurasi aplikasi.</p></div>`;
+        }
 
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+        
         async function deleteRow(table, id) {
-            if(confirm('Hapus data ini?')) {
-                await sb.from(table).delete().eq('id', id);
-                switchView(currentActiveMenu);
+            if(confirm('Yakin ingin menghapus data ini?')) {
+                const { error } = await sb.from(table).delete().eq('id', id);
+                if(error) {
+                    alert('Gagal menghapus: ' + error.message);
+                } else {
+                    switchView(currentActiveMenu);
+                }
             }
         }
     </script>
