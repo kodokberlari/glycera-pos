@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GLYCERA POS - Sistem Kasir & Manajemen Terintegrasi</title>
+    <title>GLYCERA POS - Sistem Manajemen & Kasir Terintegrasi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -11,7 +11,7 @@
             theme: {
                 extend: {
                     colors: {
-                        brand: { 50: '#fdf4f8', 500: '#db2777', 600: '#be185d', 700: '#9d174d' }
+                        brand: { 50: '#fdf4f8', 100: '#fbcfe8', 500: '#db2777', 600: '#be185d', 700: '#9d174d', 800: '#831843' }
                     }
                 }
             }
@@ -20,50 +20,59 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>body { font-family: 'Inter', sans-serif; }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+        .light .glass-panel { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); }
+        /* Custom scrollbar untuk tabel tanpa geser horizontal */
+        .table-container { overflow-x: auto; overflow-y: auto; max-height: 60vh; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(150, 150, 150, 0.3); border-radius: 4px; }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-300" id="appBody">
 
     <!-- LOGIN SCREEN -->
-    <div id="loginScreen" class="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/90 p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-8 shadow-2xl relative">
+    <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 p-4">
+        <div class="glass-panel border border-slate-800 rounded-3xl w-full max-w-md p-8 shadow-2xl relative">
             <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-brand-600/20 text-brand-500 text-2xl font-bold mb-4">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-600/20 text-brand-500 text-2xl font-bold mb-4 shadow-inner">
                     <i class="fa-solid fa-gem"></i>
                 </div>
-                <h1 class="text-2xl font-bold tracking-wider text-white">GLYCERA POS</h1>
-                <p class="text-sm text-slate-400 mt-1">Silakan masuk dengan akun Anda</p>
+                <h1 class="text-2xl font-bold tracking-wider text-white">WELCOME TO GLYCERA</h1>
+                <p class="text-sm text-slate-400 mt-1">Sistem Manajemen Stok & Kasir Terintegrasi</p>
             </div>
             <form onsubmit="handleLogin(event)" class="space-y-5">
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">Username</label>
-                    <input type="text" id="loginUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="admin" value="admin">
+                    <input type="text" id="loginUser" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="Masukkan username">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">PIN</label>
-                    <input type="password" id="loginPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="1234" value="1234">
+                    <input type="password" id="loginPin" required class="w-full bg-slate-950/80 border border-slate-800 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-brand-500 transition" placeholder="Masukkan PIN rahasia">
                 </div>
-                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-600/30">
+                <button type="submit" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/30">
                     MASUK APLIKASI
                 </button>
             </form>
-            <p class="text-xs text-slate-500 text-center mt-6">Default: Username: <b>admin</b> | PIN: <b>1234</b></p>
         </div>
     </div>
 
     <!-- MAIN APP LAYOUT -->
     <div id="appLayout" class="flex h-screen overflow-hidden hidden">
         <!-- SIDEBAR -->
-        <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-20">
-            <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+        <aside id="sidebarContainer" class="w-64 glass-panel border-r border-slate-800 flex flex-col z-20 transition-all duration-300">
+            <div class="p-5 border-b border-slate-800/80 flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold shadow-md">G</div>
-                <div>
-                    <h2 class="font-bold text-white tracking-wide">GLYCERA</h2>
-                    <p class="text-xs text-slate-400" id="currentRoleDisplay">Role: OWNER</p>
+                <div class="overflow-hidden">
+                    <h2 class="font-bold text-white tracking-wide truncate">GLYCERA</h2>
+                    <p class="text-xs text-slate-400 truncate" id="currentRoleDisplay">Role: OWNER</p>
                 </div>
             </div>
-            <nav class="flex-1 overflow-y-auto p-4 space-y-1.5" id="sidebarNav"></nav>
-            <div class="p-4 border-t border-slate-800">
+            <nav class="flex-1 overflow-y-auto p-3 space-y-1" id="sidebarNav"></nav>
+            <div class="p-3 border-t border-slate-800/80">
                 <button onclick="handleLogout()" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-rose-400 hover:bg-rose-500/10 transition text-sm font-medium">
                     <i class="fa-solid fa-arrow-right-from-bracket w-5"></i> Keluar
                 </button>
@@ -71,21 +80,48 @@
         </aside>
 
         <!-- MAIN CONTENT -->
-        <main class="flex-1 flex flex-col overflow-hidden relative" id="mainContentArea">
-            <header class="h-16 bg-slate-900/80 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6 z-10">
-                <h2 id="pageTitle" class="text-lg font-bold text-white">Dashboard</h2>
+        <main class="flex-1 flex flex-col overflow-hidden relative">
+            <header class="h-16 glass-panel border-b border-slate-800/80 flex items-center justify-between px-6 z-10">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="lg:hidden text-slate-400 hover:text-white p-2">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <h2 id="pageTitle" class="text-lg font-bold text-white">Dashboard</h2>
+                </div>
                 <div class="flex items-center gap-4">
-                    <span id="loggedInUserLabel" class="text-sm font-medium text-slate-300"></span>
-                    <button onclick="document.documentElement.classList.toggle('dark')" class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 hover:text-white">
-                        <i class="fa-solid fa-moon"></i>
+                    <span id="loggedInUserLabel" class="text-sm font-medium text-slate-300 hidden sm:inline"></span>
+                    <button onclick="toggleDarkMode()" class="w-9 h-9 rounded-xl glass-panel border border-slate-700/60 flex items-center justify-center text-slate-300 hover:text-white transition">
+                        <i class="fa-solid fa-moon" id="themeIcon"></i>
                     </button>
                 </div>
             </header>
-            <div class="flex-1 overflow-y-auto p-6" id="viewContainer"></div>
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6" id="viewContainer"></div>
         </main>
     </div>
 
-    <!-- SCRIPT UTAMA -->
+    <!-- STRUK THERMAL MODAL -->
+    <div id="receiptModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+        <div class="bg-white text-slate-900 rounded-2xl w-full max-w-sm p-6 shadow-2xl relative font-mono text-xs">
+            <div id="receiptContent" class="space-y-3 pb-4">
+                <div class="text-center font-bold text-sm tracking-widest">GLYCERA</div>
+                <div class="text-center text-[10px] text-slate-500">----------------------------------------</div>
+                <div id="receiptDetails" class="space-y-1"></div>
+                <div class="text-center text-[10px] text-slate-500">----------------------------------------</div>
+                <div id="receiptItems" class="space-y-2"></div>
+                <div class="text-center text-[10px] text-slate-500">----------------------------------------</div>
+                <div id="receiptTotals" class="space-y-1"></div>
+                <div class="text-center text-[10px] text-slate-500">----------------------------------------</div>
+                <div class="text-center font-semibold mt-4 text-[11px]">TERIMAKASIH TELAH BERBELANJA DI GLYCERA</div>
+            </div>
+            <div class="flex gap-2 pt-2 border-t border-slate-200">
+                <button onclick="printReceipt()" class="flex-1 bg-slate-900 text-white py-2 rounded-lg font-sans font-semibold text-xs hover:bg-slate-800 transition">Cetak Struk</button>
+                <button onclick="downloadReceiptJPG()" class="flex-1 bg-brand-600 text-white py-2 rounded-lg font-sans font-semibold text-xs hover:bg-brand-700 transition">Download JPG</button>
+                <button onclick="closeReceiptModal()" class="px-3 bg-slate-200 text-slate-700 rounded-lg font-sans text-xs hover:bg-slate-300 transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORE APP SCRIPT -->
     <script>
         const SUPABASE_URL = 'https://mqscicebveyypntbxswe.supabase.co';
         const SUPABASE_KEY = 'sb_publishable_-jH6NUxDK-8TOvno3oo8qw_Q_Kv6bwG';
@@ -104,14 +140,56 @@
 
         let currentActiveMenu = 1;
         let currentUser = JSON.parse(localStorage.getItem('gly_current_user')) || null;
+        let cashierCurrency = 'IDR';
+        let cashierCart = [];
+        let activeDiscount = null;
+        let currentTxPage = 1;
+        const txPerPage = 10;
+        let lastPrintedTx = null;
 
         window.addEventListener('DOMContentLoaded', async () => {
-            if (currentUser) {
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('appLayout').classList.remove('hidden');
-                setupApp();
+            try {
+                applyThemeAndBackground();
+                if (currentUser) {
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appLayout').classList.remove('hidden');
+                    setupApp();
+                }
+            } catch (err) {
+                console.error("Init Error:", err);
             }
         });
+
+        function applyThemeAndBackground() {
+            const isDark = localStorage.getItem('gly_dark_mode') !== 'false';
+            if (isDark) {
+                document.documentElement.classList.add('dark');
+                document.documentElement.classList.remove('light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-sun';
+            } else {
+                document.documentElement.classList.remove('dark');
+                document.documentElement.classList.add('light');
+                document.getElementById('themeIcon').className = 'fa-solid fa-moon';
+            }
+
+            if (currentUser) {
+                const bgKey = `gly_bg_${currentUser.username}`;
+                const savedBg = localStorage.getItem(bgKey);
+                if (savedBg) {
+                    document.getElementById('appBody').style.backgroundImage = `url('${savedBg}')`;
+                    document.getElementById('appBody').style.backgroundSize = 'cover';
+                    document.getElementById('appBody').style.backgroundPosition = 'center';
+                } else {
+                    document.getElementById('appBody').style.backgroundImage = '';
+                }
+            }
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.contains('dark');
+            localStorage.setItem('gly_dark_mode', !isDark);
+            applyThemeAndBackground();
+        }
 
         async function handleLogin(e) {
             e.preventDefault();
@@ -123,19 +201,25 @@
                 localStorage.setItem('gly_current_user', JSON.stringify(currentUser));
                 document.getElementById('loginScreen').classList.add('hidden');
                 document.getElementById('appLayout').classList.remove('hidden');
+                applyThemeAndBackground();
                 setupApp();
                 return;
             }
 
-            let { data, error } = await sb.from('app_users').select('*').eq('username', u).eq('pin', p);
-            if(data && data.length > 0) {
-                currentUser = data[0];
-                localStorage.setItem('gly_current_user', JSON.stringify(currentUser));
-                document.getElementById('loginScreen').classList.add('hidden');
-                document.getElementById('appLayout').classList.remove('hidden');
-                setupApp();
-            } else {
-                alert('Username atau PIN salah!');
+            try {
+                let { data, error } = await sb.from('app_users').select('*').eq('username', u).eq('pin', p);
+                if(data && data.length > 0) {
+                    currentUser = data[0];
+                    localStorage.setItem('gly_current_user', JSON.stringify(currentUser));
+                    document.getElementById('loginScreen').classList.add('hidden');
+                    document.getElementById('appLayout').classList.remove('hidden');
+                    applyThemeAndBackground();
+                    setupApp();
+                } else {
+                    alert('Username atau PIN salah!');
+                }
+            } catch(err) {
+                alert('Gagal terhubung ke database: ' + err.message);
             }
         }
 
@@ -145,18 +229,28 @@
         }
 
         function setupApp() {
-            document.getElementById('loggedInUserLabel').innerText = `${currentUser.name} (${currentUser.role})`;
-            document.getElementById('currentRoleDisplay').innerText = `Role: ${currentUser.role}`;
-            renderSidebar();
-            switchView(1);
+            try {
+                document.getElementById('loggedInUserLabel').innerText = `${currentUser.name} (${currentUser.role})`;
+                document.getElementById('currentRoleDisplay').innerText = `Role: ${currentUser.role}`;
+                renderSidebar();
+                switchView(1);
+            } catch(err) {
+                console.error("SetupApp Error:", err);
+            }
         }
 
         function renderSidebar() {
-            document.getElementById('sidebarNav').innerHTML = menuList.map(m => `
+            const nav = document.getElementById('sidebarNav');
+            nav.innerHTML = menuList.map(m => `
                 <button onclick="switchView(${m.id})" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${currentActiveMenu === m.id ? 'bg-brand-600 text-white shadow-lg shadow-brand-600/30' : 'text-slate-400 hover:text-white hover:bg-slate-800/60'}">
                     <i class="fa-solid ${m.icon} w-5"></i> ${m.name}
                 </button>
             `).join('');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebarContainer');
+            sidebar.classList.toggle('hidden');
         }
 
         async function switchView(id) {
@@ -164,147 +258,788 @@
             renderSidebar();
             document.getElementById('pageTitle').innerText = menuList.find(m => m.id === id).name;
             const container = document.getElementById('viewContainer');
-            container.innerHTML = `<div class="p-8 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data...</div>`;
+            container.innerHTML = `<div class="p-12 text-center text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i> Memuat data...</div>`;
 
             try {
                 if (id === 1) await renderDashboard(container);
                 else if (id === 2) await renderCashier(container);
                 else if (id === 3) await renderProductStock(container);
-                else if (id === 4) await renderRawMaterials(container);
-                else if (id === 5) await renderDiscounts(container);
-                else if (id === 6) await renderDollar(container);
-                else if (id === 7) await renderAccounts(container);
-                else if (id === 8) await renderSettings(container);
+                else if (id === 4) await renderRawMaterialsMenu(container);
+                else if (id === 5) await renderDiscountsMenu(container);
+                else if (id === 6) await renderDollarMenu(container);
+                else if (id === 7) await renderAccountsMenu(container);
+                else if (id === 8) await renderSettingsMenu(container);
             } catch (err) {
                 console.error("View Error:", err);
-                container.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Terjadi kesalahan: ${err.message}</div>`;
+                container.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Terjadi kesalahan memuat halaman: ${err.message}</div>`;
             }
         }
 
+        // --- 1. DASHBOARD ---
         async function renderDashboard(c) {
             let { data: txs } = await sb.from('transactions').select('*');
             let { data: prods } = await sb.from('products').select('*');
-            txs = txs || []; prods = prods || [];
+            let { data: wds } = await sb.from('withdrawals').select('*');
+            txs = txs || []; prods = prods || []; wds = wds || [];
+
+            let totalRevIDR = txs.filter(t => t.currency === 'IDR').reduce((acc, t) => acc + Number(t.grand_total || 0), 0);
+            let totalRevUSD = txs.filter(t => t.currency === 'USD').reduce((acc, t) => acc + Number(t.grand_total || 0), 0);
+            let totalCairIDR = wds.reduce((acc, w) => acc + Number(w.idr_result || 0), 0);
+
             c.innerHTML = `
                 <div class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="glass-panel border border-slate-800 p-5 rounded-2xl shadow-xl">
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Pendapatan IDR</p>
+                            <h3 class="text-2xl font-bold text-white mt-1">Rp ${totalRevIDR.toLocaleString()}</h3>
+                        </div>
+                        <div class="glass-panel border border-slate-800 p-5 rounded-2xl shadow-xl">
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Pendapatan USD</p>
+                            <h3 class="text-2xl font-bold text-emerald-400 mt-1">$ ${totalRevUSD.toFixed(2)}</h3>
+                        </div>
+                        <div class="glass-panel border border-slate-800 p-5 rounded-2xl shadow-xl">
+                            <p class="text-xs uppercase text-slate-400 font-semibold">Pencairan Dollar ke IDR</p>
+                            <h3 class="text-2xl font-bold text-brand-400 mt-1">Rp ${totalCairIDR.toLocaleString()}</h3>
+                        </div>
+                        <div class="glass-panel border border-slate-800 p-5 rounded-2xl shadow-xl">
                             <p class="text-xs uppercase text-slate-400 font-semibold">Total Produk Jadi</p>
-                            <h3 class="text-3xl font-bold text-white mt-1">${prods.length}</h3>
+                            <h3 class="text-2xl font-bold text-white mt-1">${prods.length} Item</h3>
                         </div>
-                        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                            <p class="text-xs uppercase text-slate-400 font-semibold">Total Transaksi</p>
-                            <h3 class="text-3xl font-bold text-white mt-1">${txs.length}</h3>
+                    </div>
+
+                    <div class="glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                            <h3 class="font-bold text-white text-lg">Riwayat Transaksi & Laporan</h3>
+                            <div class="flex items-center gap-2">
+                                <button onclick="resetReports()" class="bg-rose-600/20 text-rose-400 border border-rose-500/30 px-4 py-2 rounded-xl text-xs font-semibold hover:bg-rose-600/30 transition">Reset Laporan</button>
+                                <button onclick="exportToPDF()" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold transition shadow-md shadow-brand-600/20"><i class="fa-solid fa-file-pdf mr-1"></i> Export PDF</button>
+                            </div>
                         </div>
+
+                        <div class="table-container border border-slate-800 rounded-xl">
+                            <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="p-3">No</th>
+                                        <th class="p-3">Waktu & Faktur</th>
+                                        <th class="p-3">Nama Barang</th>
+                                        <th class="p-3">Qty</th>
+                                        <th class="p-3">Modal / HPP</th>
+                                        <th class="p-3">Harga Jual Rupiah</th>
+                                        <th class="p-3">Harga Jual Dollar</th>
+                                        <th class="p-3">Diskon</th>
+                                        <th class="p-3">Total Bersih</th>
+                                        <th class="p-3">Status Pencairan</th>
+                                        <th class="p-3">TOTAL (Kotor)</th>
+                                        <th class="p-3">TOTAL (Bersih)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800" id="txTableBody">
+                                    <tr><td colspan="12" class="p-6 text-center text-slate-500">Memuat transaksi...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="flex justify-between items-center mt-4 text-xs text-slate-400" id="txPagination"></div>
                     </div>
                 </div>
             `;
+            loadTransactionsTable(txs);
         }
 
-        async function renderCashier(c) {
-            let { data: prods } = await sb.from('products').select('*');
-            prods = prods || [];
-            c.innerHTML = `
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                        <h3 class="font-bold text-white mb-4">Pilih Produk</h3>
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            ${prods.length === 0 ? `<p class="text-slate-500 col-span-full">Belum ada produk.</p>` : prods.map(p => `
-                                <div class="bg-slate-950 border border-slate-800 p-4 rounded-xl">
-                                    <h4 class="font-bold text-white text-sm">${p.name}</h4>
-                                    <p class="text-xs text-slate-400 mt-1">Rp ${Number(p.price_idr || 0).toLocaleString()}</p>
-                                    <p class="text-xs text-brand-400 mt-2">Stok: ${p.stock || 0}</p>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                    <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                        <h3 class="font-bold text-white mb-4">Keranjang Belanja</h3>
-                        <p class="text-slate-500 text-sm">Belum ada item dipilih.</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        // --- MANAJEMEN STOK PRODUK JADI ---
-        async function renderProductStock(c) {
-            let { data: products, error } = await sb.from('products').select('*');
-            if (error) {
-                c.innerHTML = `<div class="p-4 bg-rose-500/10 text-rose-400 rounded-xl">Error: ${error.message}</div>`;
+        async function loadTransactionsTable(txs) {
+            const tbody = document.getElementById('txTableBody');
+            if(!txs || txs.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="12" class="p-6 text-center text-slate-500">Belum ada transaksi.</td></tr>`;
                 return;
             }
-            products = products || [];
+
+            let start = (currentTxPage - 1) * txPerPage;
+            let paginated = txs.slice(start, start + txPerPage);
+
+            let totalKotorSum = 0;
+            let totalBersihSum = 0;
+
+            tbody.innerHTML = paginated.map((t, idx) => {
+                let no = start + idx + 1;
+                let isIDR = t.currency === 'IDR';
+                let kotor = Number(t.grand_total || 0);
+                let hpp = Number(t.total_hpp || 0);
+                let bersih = kotor - hpp;
+
+                if (isIDR) {
+                    totalKotorSum += kotor;
+                    totalBersihSum += bersih;
+                }
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3">${no}</td>
+                        <td class="p-3">${t.date} <br><span class="text-slate-500">${t.invoice}</span></td>
+                        <td class="p-3 font-medium text-white">${t.items_summary}</td>
+                        <td class="p-3">${t.total_qty}</td>
+                        <td class="p-3">Rp ${hpp.toLocaleString()}</td>
+                        <td class="p-3">${isIDR ? 'Rp ' + kotor.toLocaleString() : '-'}</td>
+                        <td class="p-3">${!isIDR ? '$ ' + kotor.toFixed(2) : '-'}</td>
+                        <td class="p-3">${t.discount_label || '-'}</td>
+                        <td class="p-3 font-semibold text-brand-400">${isIDR ? 'Rp ' + kotor.toLocaleString() : '$ ' + kotor.toFixed(2)}</td>
+                        <td class="p-3">${isIDR ? 'N/A (IDR)' : (t.withdrawn ? '<span class="text-emerald-400 font-semibold">Sudah Cair</span>' : '<span class="text-amber-400 font-semibold">Belum Cair</span>')}</td>
+                        <td class="p-3">${isIDR ? 'Rp ' + kotor.toLocaleString() : (t.withdrawn ? 'Rp ' + Number(t.idr_converted || 0).toLocaleString() : '-')}</td>
+                        <td class="p-3 font-bold text-emerald-400">Rp ${bersih.toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            document.getElementById('txPagination').innerHTML = `
+                <span>Halaman ${currentTxPage} dari ${Math.ceil(txs.length / txPerPage) || 1}</span>
+                <div class="flex gap-2">
+                    <button onclick="changeTxPage(-1)" class="px-3 py-1 bg-slate-800 rounded-lg text-white disabled:opacity-50">Prev</button>
+                    <button onclick="changeTxPage(1)" class="px-3 py-1 bg-slate-800 rounded-lg text-white disabled:opacity-50">Next</button>
+                </div>
+            `;
+        }
+
+        function changeTxPage(dir) {
+            currentTxPage += dir;
+            renderDashboard(document.getElementById('viewContainer'));
+        }
+
+        async function resetReports() {
+            let pin = prompt("Masukkan PIN Reset (Default: 1234):");
+            if(pin === '1234') {
+                if(confirm("Yakin ingin mereset seluruh laporan transaksi dan pencairan?")) {
+                    await sb.from('transactions').delete().neq('id', 0);
+                    await sb.from('withdrawals').delete().neq('id', 0);
+                    alert("Laporan berhasil direset.");
+                    switchView(1);
+                }
+            } else if(pin !== null) {
+                alert("PIN Salah!");
+            }
+        }
+
+        async function exportToPDF() {
+            let { data: txs } = await sb.from('transactions').select('*');
+            txs = txs || [];
+            let content = "=== LAPORAN TRANSAKSI GLYCERA ===\n\n";
+            txs.forEach((t, i) => {
+                content += `${i+1}. [${t.date}] ${t.invoice} - ${t.items_summary} | Total: ${t.currency} ${t.grand_total}\n`;
+            });
+            let blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            let link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `Laporan_Glycera_${new Date().toISOString().slice(0,10)}.txt`;
+            link.click();
+            alert("File laporan transaksi berhasil diunduh.");
+        }
+
+        // --- 2. PENJUALAN (KASIR) ---
+        async function renderCashier(c) {
+            let { data: prods } = await sb.from('products').select('*');
+            let { data: cats } = await sb.from('categories').select('*');
+            let { data: discs } = await sb.from('discounts').select('*');
+            prods = prods || []; cats = cats || []; discs = discs || [];
+
+            c.innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col h-[75vh]">
+                        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4">
+                            <div class="flex items-center gap-2 w-full sm:w-auto">
+                                <button onclick="setCashierCurrency('IDR')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${cashierCurrency === 'IDR' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'}">IDR (Rp)</button>
+                                <button onclick="setCashierCurrency('USD')" class="px-4 py-2 rounded-xl text-xs font-bold transition ${cashierCurrency === 'USD' ? 'bg-brand-600 text-white shadow-md' : 'bg-slate-800 text-slate-400'}">USD ($)</button>
+                            </div>
+                            <div class="flex gap-2 w-full sm:w-auto">
+                                <select id="cashierCatFilter" onchange="filterCashierProducts()" class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                                    <option value="">Semua Kategori</option>
+                                    ${cats.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('')}
+                                </select>
+                                <input type="text" id="cashierSearch" oninput="filterCashierProducts()" placeholder="Cari produk..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                            </div>
+                        </div>
+
+                        <div class="flex-1 overflow-y-auto pr-2 grid grid-cols-2 sm:grid-cols-3 gap-3" id="cashierProductGrid">
+                            ${renderCashierProductCards(prods)}
+                        </div>
+                    </div>
+
+                    <div class="glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl flex flex-col h-[75vh]">
+                        <h3 class="font-bold text-white text-base mb-4">Keranjang Belanja</h3>
+                        <div class="flex-1 overflow-y-auto space-y-3 pr-2 border-y border-slate-800 py-3" id="cartItemList">
+                            <p class="text-slate-500 text-xs text-center py-8">Keranjang masih kosong.</p>
+                        </div>
+                        <div class="pt-4 space-y-3">
+                            <div>
+                                <label class="text-[10px] uppercase font-semibold text-slate-400">Diskon Kupon</label>
+                                <select id="cartDiscountSelect" onchange="applyCartDiscount()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white mt-1">
+                                    <option value="">Tanpa Diskon</option>
+                                    ${discs.map(d => `<option value="${d.id}">${d.code} (${d.type === 'percent' ? d.value + '%' : 'Rp ' + d.value})</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="flex justify-between text-sm font-bold text-white">
+                                <span>Total Bersih:</span>
+                                <span id="cartGrandTotal" class="text-brand-400">Rp 0</span>
+                            </div>
+                            <button onclick="checkout()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 rounded-xl transition shadow-lg shadow-brand-600/30 text-sm">
+                                PROSES PEMBAYARAN
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.allCashierProducts = prods;
+        }
+
+        function setCashierCurrency(curr) {
+            cashierCurrency = curr;
+            renderCashier(document.getElementById('viewContainer'));
+        }
+
+        function renderCashierProductCards(prods) {
+            if(!prods || prods.length === 0) return `<p class="text-slate-500 text-xs col-span-full text-center py-10">Belum ada produk tersedia.</p>`;
+            return prods.map(p => {
+                let price = cashierCurrency === 'IDR' ? `Rp ${Number(p.price_idr || 0).toLocaleString()}` : `$ ${Number(p.price_usd || 0).toFixed(2)}`;
+                return `
+                    <div onclick='addToCart(${JSON.stringify(p)})' class="bg-slate-950/80 border border-slate-800 hover:border-brand-500 p-3 rounded-xl cursor-pointer transition flex flex-col justify-between group">
+                        <div>
+                            <div class="w-full h-24 bg-slate-900 rounded-lg mb-2 overflow-hidden flex items-center justify-center">
+                                ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-gem text-slate-700 text-2xl"></i>`}
+                            </div>
+                            <h4 class="font-bold text-white text-xs group-hover:text-brand-400 transition">${p.name}</h4>
+                            <p class="text-[10px] text-slate-400">${p.category || '-'} (${p.size || '-'})</p>
+                        </div>
+                        <div class="mt-2 flex justify-between items-center">
+                            <span class="text-xs font-bold text-brand-400">${price}</span>
+                            <span class="text-[10px] text-slate-500">Stok: ${p.stock || 0}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function filterCashierProducts() {
+            let cat = document.getElementById('cashierCatFilter').value;
+            let q = document.getElementById('cashierSearch').value.toLowerCase();
+            let filtered = window.allCashierProducts.filter(p => {
+                let matchCat = !cat || p.category === cat;
+                let matchQ = p.name.toLowerCase().includes(q);
+                return matchCat && matchQ;
+            });
+            document.getElementById('cashierProductGrid').innerHTML = renderCashierProductCards(filtered);
+        }
+
+        function addToCart(product) {
+            let existing = cashierCart.find(item => item.id === product.id);
+            if (existing) {
+                if(existing.qty < product.stock) existing.qty++;
+                else alert('Stok produk tidak mencukupi!');
+            } else {
+                if(product.stock <= 0) {
+                    alert('Stok produk habis!');
+                    return;
+                }
+                cashierCart.push({
+                    id: product.id,
+                    name: product.name,
+                    size: product.size || '',
+                    category: product.category || '',
+                    hpp: Number(product.hpp || 0),
+                    price: cashierCurrency === 'IDR' ? Number(product.price_idr || 0) : Number(product.price_usd || 0),
+                    qty: 1,
+                    maxStock: product.stock || 0
+                });
+            }
+            renderCart();
+        }
+
+        function updateCartQty(id, delta) {
+            let item = cashierCart.find(i => i.id === id);
+            if(item) {
+                item.qty += delta;
+                if(item.qty <= 0) {
+                    cashierCart = cashierCart.filter(i => i.id !== id);
+                } else if(item.qty > item.maxStock) {
+                    item.qty = item.maxStock;
+                    alert('Stok maksimum tercapai!');
+                }
+            }
+            renderCart();
+        }
+
+        function applyCartDiscount() {
+            renderCart();
+        }
+
+        function renderCart() {
+            const list = document.getElementById('cartItemList');
+            if(cashierCart.length === 0) {
+                list.innerHTML = `<p class="text-slate-500 text-xs text-center py-8">Keranjang masih kosong.</p>`;
+                document.getElementById('cartGrandTotal').innerText = cashierCurrency === 'IDR' ? 'Rp 0' : '$ 0.00';
+                return;
+            }
+
+            let subtotal = cashierCart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            let discId = document.getElementById('cartDiscountSelect')?.value;
+            let discAmount = 0;
+            let discLabel = '';
+
+            list.innerHTML = cashierCart.map(item => `
+                <div class="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                    <div class="overflow-hidden">
+                        <h5 class="font-bold text-white text-xs truncate">${item.name} (${item.size})</h5>
+                        <p class="text-[10px] text-slate-400">${cashierCurrency === 'IDR' ? 'Rp ' + item.price.toLocaleString() : '$ ' + item.price.toFixed(2)} x ${item.qty}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="updateCartQty(${item.id}, -1)" class="w-6 h-6 bg-slate-800 rounded-lg text-white flex items-center justify-center text-xs">-</button>
+                        <span class="text-xs font-bold text-white">${item.qty}</span>
+                        <button onclick="updateCartQty(${item.id}, 1)" class="w-6 h-6 bg-slate-800 rounded-lg text-white flex items-center justify-center text-xs">+</button>
+                    </div>
+                </div>
+            `).join('');
+
+            let grandTotal = subtotal - discAmount;
+            document.getElementById('cartGrandTotal').innerText = cashierCurrency === 'IDR' ? `Rp ${grandTotal.toLocaleString()}` : `$ ${grandTotal.toFixed(2)}`;
+        }
+
+        async function checkout() {
+            if(cashierCart.length === 0) {
+                alert('Keranjang belanja masih kosong!');
+                return;
+            }
+
+            let subtotal = cashierCart.reduce((acc, i) => acc + (i.price * i.qty), 0);
+            let totalHpp = cashierCart.reduce((acc, i) => acc + (i.hpp * i.qty), 0);
+            let totalQty = cashierCart.reduce((acc, i) => acc + i.qty, 0);
+            let grandTotal = subtotal;
+
+            let itemsSummary = cashierCart.map(i => `${i.name} (${i.size}) x${i.qty}`).join(', ');
+            let invoiceNum = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+            let nowStr = new Date().toISOString().slice(0,19).replace('T', ' ');
+
+            let txData = {
+                date: nowStr,
+                invoice: invoiceNum,
+                items_summary: itemsSummary,
+                total_qty: totalQty,
+                total_hpp: totalHpp,
+                grand_total: grandTotal,
+                currency: cashierCurrency,
+                withdrawn: false,
+                idr_converted: 0,
+                cashier_name: currentUser.name
+            };
+
+            let { error } = await sb.from('transactions').insert([txData]);
+            if(error) {
+                alert('Gagal memproses transaksi: ' + error.message);
+                return;
+            }
+
+            // Update Stok Produk
+            for(let item of cashierCart) {
+                let { data: prodArr } = await sb.from('products').select('stock').eq('id', item.id);
+                if(prodArr && prodArr.length > 0) {
+                    let newStock = Math.max(0, (prodArr[0].stock || 0) - item.qty);
+                    await sb.from('products').update({ stock: newStock }).eq('id', item.id);
+                }
+            }
+
+            lastPrintedTx = { ...txData, items: [...cashierCart] };
+            showReceiptModal(lastPrintedTx);
+            cashierCart = [];
+            renderCashier(document.getElementById('viewContainer'));
+        }
+
+        function showReceiptModal(tx) {
+            document.getElementById('receiptDetails').innerHTML = `
+                <div>Tgl: ${tx.date}</div>
+                <div>No: ${tx.invoice}</div>
+                <div>Kasir: ${tx.cashier_name}</div>
+            `;
+            document.getElementById('receiptItems').innerHTML = tx.items.map(i => `
+                <div class="flex justify-between">
+                    <span>${i.name} ${i.size} x${i.qty}</span>
+                    <span>${tx.currency === 'IDR' ? 'Rp ' + (i.price * i.qty).toLocaleString() : '$ ' + (i.price * i.qty).toFixed(2)}</span>
+                </div>
+            `).join('');
+            document.getElementById('receiptTotals').innerHTML = `
+                <div class="flex justify-between font-bold pt-1">
+                    <span>TOTAL:</span>
+                    <span>${tx.currency === 'IDR' ? 'Rp ' + Number(tx.grand_total).toLocaleString() : '$ ' + Number(tx.grand_total).toFixed(2)}</span>
+                </div>
+            `;
+            document.getElementById('receiptModal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receiptModal').classList.add('hidden');
+        }
+
+        function printReceipt() {
+            window.print();
+        }
+
+        async function downloadReceiptJPG() {
+            let el = document.getElementById('receiptContent');
+            let canvas = await html2canvas(el);
+            let link = document.createElement('a');
+            link.download = `Struk_${lastPrintedTx?.invoice || 'GLYCERA'}.jpg`;
+            link.href = canvas.toDataURL('image/jpeg');
+            link.click();
+        }
+
+        // --- 3. MANAJEMEN STOK (PRODUK JADI & KATEGORI) ---
+        async function renderProductStock(c) {
+            let { data: products } = await sb.from('products').select('*');
+            let { data: categories } = await sb.from('categories').select('*');
+            let { data: recipes } = await sb.from('recipes').select('*');
+            products = products || []; categories = categories || []; recipes = recipes || [];
 
             c.innerHTML = `
                 <div class="space-y-6">
-                    <div class="flex justify-between items-center">
-                        <h3 class="font-bold text-white">Daftar Produk Jadi (${products.length})</h3>
-                        <button onclick="openModal('prodModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-brand-600/30">
-                            <i class="fa-solid fa-plus mr-2"></i> Tambah Produk
-                        </button>
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <select id="filterProductCat" onchange="filterProductStockTable()" class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-white">
+                                <option value="">Semua Kategori</option>
+                                ${categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="openModal('categoryModal')" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition border border-slate-700">Kelola Kategori</button>
+                            <button onclick="openModal('productModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold transition shadow-lg shadow-brand-600/30"><i class="fa-solid fa-plus mr-1"></i> Tambah Produk</button>
+                        </div>
                     </div>
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                        <table class="w-full text-left text-sm text-slate-300">
-                            <thead class="bg-slate-950 text-slate-400 uppercase text-xs tracking-wider">
-                                <tr>
-                                    <th class="p-4">Nama Produk</th>
-                                    <th class="p-4">Kategori</th>
-                                    <th class="p-4">Ukuran</th>
-                                    <th class="p-4">Harga (IDR)</th>
-                                    <th class="p-4">Stok</th>
-                                    <th class="p-4 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-800">
-                                ${products.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada produk.</td></tr>` : products.map(p => `
-                                    <tr class="hover:bg-slate-800/40 transition">
-                                        <td class="p-4 font-medium text-white">${p.name}</td>
-                                        <td class="p-4">${p.category || '-'}</td>
-                                        <td class="p-4">${p.size || '-'}</td>
-                                        <td class="p-4">Rp ${Number(p.price_idr || 0).toLocaleString()}</td>
-                                        <td class="p-4 font-bold text-brand-400">${p.stock || 0}</td>
-                                        <td class="p-4 text-center">
-                                            <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300 p-1.5 rounded-lg hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
-                                        </td>
+
+                    <div class="glass-panel border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="table-container">
+                            <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="p-4">Foto</th>
+                                        <th class="p-4">Nama Produk</th>
+                                        <th class="p-4">Kategori</th>
+                                        <th class="p-4">Ukuran</th>
+                                        <th class="p-4">HPP (Modal)</th>
+                                        <th class="p-4">Harga IDR</th>
+                                        <th class="p-4">Harga USD</th>
+                                        <th class="p-4">Stok</th>
+                                        <th class="p-4 text-center">Aksi</th>
                                     </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800" id="productTableBody">
+                                    ${products.length === 0 ? `<tr><td colspan="9" class="p-8 text-center text-slate-500">Belum ada produk.</td></tr>` : products.map(p => `
+                                        <tr class="hover:bg-slate-800/40 transition">
+                                            <td class="p-4">
+                                                <div class="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-800">
+                                                    ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-gem text-slate-700"></i>`}
+                                                </div>
+                                            </td>
+                                            <td class="p-4 font-bold text-white">${p.name}</td>
+                                            <td class="p-4">${p.category || '-'}</td>
+                                            <td class="p-4">${p.size || '-'}</td>
+                                            <td class="p-4 text-brand-400 font-semibold">Rp ${Number(p.hpp || 0).toLocaleString()}</td>
+                                            <td class="p-4">Rp ${Number(p.price_idr || 0).toLocaleString()}</td>
+                                            <td class="p-4">$ ${Number(p.price_usd || 0).toFixed(2)}</td>
+                                            <td class="p-4 font-bold text-white">${p.stock || 0}</td>
+                                            <td class="p-4 text-center">
+                                                <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <!-- MODAL TAMBAH PRODUK -->
-                <div id="prodModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
-                    <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
-                        <h3 class="font-bold text-white text-lg mb-4">Tambah Produk Baru</h3>
-                        <form onsubmit="saveProduct(event)" class="space-y-4">
+                <div id="productModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+                        <h3 class="font-bold text-white text-base mb-4">Tambah Produk Baru</h3>
+                        <form onsubmit="saveProduct(event)" class="space-y-4 text-xs">
                             <div>
-                                <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Nama Produk</label>
-                                <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="Misal: Vanilla Dream">
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Nama Produk / Varian</label>
+                                <input type="text" id="pName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="Black Sweet">
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Kategori</label>
-                                    <input type="text" id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="Extrait de Parfum">
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Kategori</label>
+                                    <select id="pCat" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white">
+                                        ${categories.map(cat => `<option value="${cat.name}">${cat.name}</option>`).join('')}
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Ukuran</label>
-                                    <input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="50ml">
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Ukuran / Satuan</label>
+                                    <input type="text" id="pSize" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="30 ML">
                                 </div>
                             </div>
                             <div class="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Harga (IDR)</label>
-                                    <input type="number" id="pPrice" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="150000">
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Hubungkan Racikan (Opsional)</label>
+                                    <select id="pRecipe" onchange="calcProductHPPFromRecipe()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white">
+                                        <option value="">-- Tanpa Racikan --</option>
+                                        ${recipes.map(r => `<option value="${r.id}" data-hpp="${r.total_hpp}">${r.name} (HPP: Rp ${r.total_hpp})</option>`).join('')}
+                                    </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs text-slate-300 uppercase font-semibold mb-1">Stok Awal</label>
-                                    <input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-brand-500" placeholder="10">
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">HPP Otomatis / Manual (Rp)</label>
+                                    <input type="number" id="pHpp" value="0" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white">
                                 </div>
                             </div>
-                            <div class="flex justify-end gap-2.5 mt-6">
-                                <button type="button" onclick="closeModal('prodModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 text-sm hover:bg-slate-800 transition">Batal</button>
-                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold transition shadow-lg shadow-brand-600/30">Simpan</button>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Harga Jual Rupiah (IDR)</label>
+                                    <input type="number" id="pPriceIdr" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="150000">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Harga Jual Dollar (USD)</label>
+                                    <input type="number" step="0.01" id="pPriceUsd" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="10.00">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Stok Fisik</label>
+                                    <input type="number" id="pStock" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="25">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">URL Foto Produk</label>
+                                    <input type="text" id="pPhoto" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="https://...">
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2.5 pt-4">
+                                <button type="button" onclick="closeModal('productModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300 hover:bg-slate-800">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold shadow-lg shadow-brand-600/30">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODAL KATEGORI -->
+                <div id="categoryModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-base mb-4">Kelola Kategori Produk</h3>
+                        <form onsubmit="saveCategory(event)" class="flex gap-2 mb-4">
+                            <input type="text" id="catNameInput" required placeholder="Nama Kategori Baru" class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+                            <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2 rounded-xl text-xs font-semibold">Tambah</button>
+                        </form>
+                        <div class="space-y-2 max-h-48 overflow-y-auto">
+                            ${categories.map(cat => `
+                                <div class="flex justify-between items-center bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 text-xs">
+                                    <span class="text-white font-medium">${cat.name}</span>
+                                    <button onclick="deleteRow('categories', ${cat.id})" class="text-rose-400 hover:text-rose-300"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="mt-4 text-right">
+                            <button onclick="closeModal('categoryModal')" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs">Tutup</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.allProductsList = products;
+        }
+
+        function calcProductHPPFromRecipe() {
+            let select = document.getElementById('pRecipe');
+            let opt = select.options[select.selectedIndex];
+            let hpp = opt.getAttribute('data-hpp') || 0;
+            document.getElementById('pHpp').value = hpp;
+        }
+
+        async function saveCategory(e) {
+            e.preventDefault();
+            let name = document.getElementById('catNameInput').value.trim();
+            await sb.from('categories').insert([{ name }]);
+            closeModal('categoryModal');
+            switchView(3);
+        }
+
+        async function saveProduct(e) {
+            e.preventDefault();
+            let payload = {
+                name: document.getElementById('pName').value.trim(),
+                category: document.getElementById('pCat').value,
+                size: document.getElementById('pSize').value.trim(),
+                hpp: parseFloat(document.getElementById('pHpp').value) || 0,
+                price_idr: parseFloat(document.getElementById('pPriceIdr').value) || 0,
+                price_usd: parseFloat(document.getElementById('pPriceUsd').value) || 0,
+                stock: parseInt(document.getElementById('pStock').value) || 0,
+                photo: document.getElementById('pPhoto').value.trim()
+            };
+            let { error } = await sb.from('products').insert([payload]);
+            if(error) alert('Gagal simpan produk: ' + error.message);
+            else {
+                closeModal('productModal');
+                switchView(3);
+            }
+        }
+
+        function filterProductStockTable() {
+            let cat = document.getElementById('filterProductCat').value;
+            let filtered = cat ? window.allProductsList.filter(p => p.category === cat) : window.allProductsList;
+            let tbody = document.getElementById('productTableBody');
+            if(filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-8 text-center text-slate-500">Belum ada produk di kategori ini</td></tr>`;
+                return;
+            }
+            tbody.innerHTML = filtered.map(p => `
+                <tr class="hover:bg-slate-800/40 transition">
+                    <td class="p-4">
+                        <div class="w-10 h-10 rounded-lg bg-slate-900 overflow-hidden flex items-center justify-center border border-slate-800">
+                            ${p.photo ? `<img src="${p.photo}" class="w-full h-full object-cover">` : `<i class="fa-solid fa-gem text-slate-700"></i>`}
+                        </div>
+                    </td>
+                    <td class="p-4 font-bold text-white">${p.name}</td>
+                    <td class="p-4">${p.category || '-'}</td>
+                    <td class="p-4">${p.size || '-'}</td>
+                    <td class="p-4 text-brand-400 font-semibold">Rp ${Number(p.hpp || 0).toLocaleString()}</td>
+                    <td class="p-4">Rp ${Number(p.price_idr || 0).toLocaleString()}</td>
+                    <td class="p-4">$ ${Number(p.price_usd || 0).toFixed(2)}</td>
+                    <td class="p-4 font-bold text-white">${p.stock || 0}</td>
+                    <td class="p-4 text-center">
+                        <button onclick="deleteRow('products', ${p.id})" class="text-rose-400 hover:text-rose-300 p-2 rounded-lg hover:bg-rose-500/10 transition"><i class="fa-solid fa-trash"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // --- 4. MANAJEMEN BAHAN BAKU & RACIKAN ---
+        async function renderRawMaterialsMenu(c) {
+            let { data: raw } = await sb.from('raw_materials').select('*');
+            let { data: recipes } = await sb.from('recipes').select('*');
+            raw = raw || []; recipes = recipes || [];
+
+            c.innerHTML = `
+                <div class="space-y-8">
+                    <!-- BAGIAN A: STOK BAHAN BAKU -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-white text-base">Stok Bahan Baku & Komponen</h3>
+                            <button onclick="openModal('rawModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30"><i class="fa-solid fa-plus mr-1"></i> Tambah Bahan Baku</button>
+                        </div>
+                        <div class="glass-panel border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                            <div class="table-container">
+                                <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                    <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                        <tr>
+                                            <th class="p-4">Nama Bahan Baku</th>
+                                            <th class="p-4">Jenis</th>
+                                            <th class="p-4">Ukuran / Satuan Beli</th>
+                                            <th class="p-4">Harga Beli Total</th>
+                                            <th class="p-4 text-brand-400 font-bold">Harga Per-Unit / Mili</th>
+                                            <th class="p-4 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800">
+                                        ${raw.length === 0 ? `<tr><td colspan="6" class="p-6 text-center text-slate-500">Belum ada bahan baku.</td></tr>` : raw.map(r => `
+                                            <tr class="hover:bg-slate-800/40 transition">
+                                                <td class="p-4 font-bold text-white">${r.name}</td>
+                                                <td class="p-4">${r.type || '-'}</td>
+                                                <td class="p-4">${r.buy_size} ${r.unit}</td>
+                                                <td class="p-4">Rp ${Number(r.total_cost || 0).toLocaleString()}</td>
+                                                <td class="p-4 text-brand-400 font-bold">Rp ${Number(r.cost_per_unit || 0).toLocaleString()} / ${r.unit}</td>
+                                                <td class="p-4 text-center">
+                                                    <button onclick="deleteRow('raw_materials', ${r.id})" class="text-rose-400 hover:text-rose-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BAGIAN B: RACIKAN PRODUK -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-white text-base">Racikan Produk (HPP Otomatis)</h3>
+                            <button onclick="openModal('recipeModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30"><i class="fa-solid fa-plus mr-1"></i> Tambah Racikan Baru</button>
+                        </div>
+                        <div class="glass-panel border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                            <div class="table-container">
+                                <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                    <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                        <tr>
+                                            <th class="p-4">Nama Racikan</th>
+                                            <th class="p-4">Komposisi Bahan Baku</th>
+                                            <th class="p-4 text-brand-400 font-bold">Total HPP Otomatis</th>
+                                            <th class="p-4 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-800">
+                                        ${recipes.length === 0 ? `<tr><td colspan="4" class="p-6 text-center text-slate-500">Belum ada data racikan.</td></tr>` : recipes.map(rc => `
+                                            <tr class="hover:bg-slate-800/40 transition">
+                                                <td class="p-4 font-bold text-white">${rc.name}</td>
+                                                <td class="p-4">${rc.composition_summary || '-'}</td>
+                                                <td class="p-4 text-brand-400 font-bold">Rp ${Number(rc.total_hpp || 0).toLocaleString()}</td>
+                                                <td class="p-4 text-center">
+                                                    <button onclick="deleteRow('recipes', ${rc.id})" class="text-rose-400 hover:text-rose-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL TAMBAH BAHAN BAKU -->
+                <div id="rawModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-base mb-4">Tambah Bahan Baku Baru</h3>
+                        <form onsubmit="saveRawMaterial(event)" class="space-y-4 text-xs">
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Nama Bahan Baku</label>
+                                <input type="text" id="rawName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="Bibit Black Sweet">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Jenis Bahan Baku</label>
+                                <input type="text" id="rawType" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="Cairan/Bibit">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Ukuran Beli</label>
+                                    <input type="number" step="any" id="rawSize" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="500">
+                                </div>
+                                <div>
+                                    <label class="block text-slate-300 uppercase font-semibold mb-1">Satuan</label>
+                                    <input type="text" id="rawUnit" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="ml / pcs">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Harga Beli Total (Rp)</label>
+                                <input type="number" id="rawCost" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="50000">
+                            </div>
+                            <div class="flex justify-end gap-2.5 pt-4">
+                                <button type="button" onclick="closeModal('rawModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold shadow-lg shadow-brand-600/30">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- MODAL TAMBAH RACIKAN -->
+                <div id="recipeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-base mb-4">Tambah Racikan Produk (HPP Otomatis)</h3>
+                        <form onsubmit="saveRecipe(event)" class="space-y-4 text-xs">
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Nama Racikan / Varian</label>
+                                <input type="text" id="rcName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="Racikan Black Sweet 30ml">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Pilih Komposisi Bahan Baku</label>
+                                <div id="recipeRawList" class="space-y-2 max-h-40 overflow-y-auto bg-slate-950 p-3 rounded-xl border border-slate-800">
+                                    ${raw.map(r => `
+                                        <div class="flex items-center justify-between gap-2">
+                                            <span class="text-white">${r.name} (${r.unit}) - Rp ${r.cost_per_unit}/${r.unit}</span>
+                                            <input type="number" step="any" data-id="${r.id}" data-cost="${r.cost_per_unit}" placeholder="Takaran" class="recipe-qty-input w-24 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-white text-right">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                            <div class="flex justify-end gap-2.5 pt-4">
+                                <button type="button" onclick="closeModal('recipeModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold shadow-lg shadow-brand-600/30">Hitung & Simpan HPP</button>
                             </div>
                         </form>
                     </div>
@@ -312,60 +1047,351 @@
             `;
         }
 
-        async function saveProduct(e) {
+        async function saveRawMaterial(e) {
             e.preventDefault();
-            const { error } = await sb.from('products').insert([{
-                name: document.getElementById('pName').value.trim(),
-                category: document.getElementById('pCat').value.trim(),
-                size: document.getElementById('pSize').value.trim(),
-                price_idr: parseFloat(document.getElementById('pPrice').value) || 0,
-                stock: parseInt(document.getElementById('pStock').value) || 0
-            }]);
+            let name = document.getElementById('rawName').value.trim();
+            let type = document.getElementById('rawType').value.trim();
+            let buy_size = parseFloat(document.getElementById('rawSize').value) || 1;
+            let unit = document.getElementById('rawUnit').value.trim();
+            let total_cost = parseFloat(document.getElementById('rawCost').value) || 0;
+            let cost_per_unit = total_cost / buy_size;
 
-            if (error) {
-                alert('Gagal menyimpan produk: ' + error.message);
-                return;
+            let { error } = await sb.from('raw_materials').insert([{ name, type, buy_size, unit, total_cost, cost_per_unit }]);
+            if(error) alert('Gagal simpan bahan baku: ' + error.message);
+            else {
+                closeModal('rawModal');
+                switchView(4);
+            }
+        }
+
+        async function saveRecipe(e) {
+            e.preventDefault();
+            let name = document.getElementById('rcName').value.trim();
+            let inputs = document.querySelectorAll('.recipe-qty-input');
+            let total_hpp = 0;
+            let summaryArr = [];
+
+            inputs.forEach(input => {
+                let qty = parseFloat(input.value) || 0;
+                if(qty > 0) {
+                    let costPerUnit = parseFloat(input.getAttribute('data-cost')) || 0;
+                    total_hpp += (qty * costPerUnit);
+                    summaryArr.push(`${qty} unit`);
+                }
+            });
+
+            let composition_summary = summaryArr.join(', ') || 'Komposisi standar';
+
+            let { error } = await sb.from('recipes').insert([{ name, composition_summary, total_hpp }]);
+            if(error) alert('Gagal simpan racikan: ' + error.message);
+            else {
+                closeModal('recipeModal');
+                switchView(4);
+            }
+        }
+
+        // --- 5. MANAJEMEN DISKON ---
+        async function renderDiscountsMenu(c) {
+            let { data: discs } = await sb.from('discounts').select('*');
+            discs = discs || [];
+
+            c.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-white text-base">Daftar Diskon & Potongan Harga</h3>
+                        <button onclick="openModal('discModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30"><i class="fa-solid fa-plus mr-1"></i> Tambah Diskon</button>
+                    </div>
+                    <div class="glass-panel border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="table-container">
+                            <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="p-4">Kode Diskon</th>
+                                        <th class="p-4">Tipe Diskon</th>
+                                        <th class="p-4">Nilai</th>
+                                        <th class="p-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    ${discs.length === 0 ? `<tr><td colspan="4" class="p-6 text-center text-slate-500">Belum ada diskon.</td></tr>` : discs.map(d => `
+                                        <tr class="hover:bg-slate-800/40 transition">
+                                            <td class="p-4 font-bold text-white">${d.code}</td>
+                                            <td class="p-4 uppercase">${d.type}</td>
+                                            <td class="p-4 text-brand-400 font-semibold">${d.type === 'percent' ? d.value + '%' : 'Rp ' + Number(d.value).toLocaleString()}</td>
+                                            <td class="p-4 text-center">
+                                                <button onclick="deleteRow('discounts', ${d.id})" class="text-rose-400 hover:text-rose-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL DISKON -->
+                <div id="discModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-base mb-4">Tambah Diskon Baru</h3>
+                        <form onsubmit="saveDiscount(event)" class="space-y-4 text-xs">
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Kode Diskon</label>
+                                <input type="text" id="dCode" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="PROMOHEMAT">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Tipe Diskon</label>
+                                <select id="dType" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white">
+                                    <option value="percent">Persentase (%)</option>
+                                    <option value="fixed">Nominal Tetap (Rp)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Nilai Diskon</label>
+                                <input type="number" step="any" id="dValue" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="10">
+                            </div>
+                            <div class="flex justify-end gap-2.5 pt-4">
+                                <button type="button" onclick="closeModal('discModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold shadow-lg shadow-brand-600/30">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        async function saveDiscount(e) {
+            e.preventDefault();
+            let code = document.getElementById('dCode').value.trim();
+            let type = document.getElementById('dType').value;
+            let value = parseFloat(document.getElementById('dValue').value) || 0;
+
+            let { error } = await sb.from('discounts').insert([{ code, type, value }]);
+            if(error) alert('Gagal simpan diskon: ' + error.message);
+            else {
+                closeModal('discModal');
+                switchView(5);
+            }
+        }
+
+        // --- 6. PENCAIRAN DOLLAR (USD to IDR) ---
+        async function renderDollarMenu(c) {
+            let { data: txs } = await sb.from('transactions').select('*').eq('currency', 'USD');
+            let { data: wds } = await sb.from('withdrawals').select('*');
+            txs = txs || []; wds = wds || [];
+
+            let totalUSD = txs.filter(t => !t.withdrawn).reduce((acc, t) => acc + Number(t.grand_total || 0), 0);
+
+            c.innerHTML = `
+                <div class="space-y-6">
+                    <div class="glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl">
+                        <p class="text-xs uppercase text-slate-400 font-semibold">Akumulasi Saldo Dollar ($) Belum Dicairkan</p>
+                        <h3 class="text-3xl font-bold text-emerald-400 mt-1">$ ${totalUSD.toFixed(2)}</h3>
+                        
+                        <form onsubmit="processWithdrawal(event)" class="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end text-xs">
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Jumlah USD Dicairkan</label>
+                                <input type="number" step="0.01" id="wdAmount" max="${totalUSD}" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" value="${totalUSD}">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Kurs Bebas (1 USD = Rp ...)</label>
+                                <input type="number" id="wdRate" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" value="15500">
+                            </div>
+                            <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 rounded-xl transition shadow-lg shadow-brand-600/30">CAIRKAN KE RUPIAH</button>
+                        </form>
+                    </div>
+
+                    <div class="glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl">
+                        <h3 class="font-bold text-white text-base mb-4">Riwayat Pencairan Dollar</h3>
+                        <div class="table-container">
+                            <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="p-4">Tanggal</th>
+                                        <th class="p-4">USD Dicairkan</th>
+                                        <th class="p-4">Kurs Rate</th>
+                                        <th class="p-4">Hasil IDR</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    ${wds.length === 0 ? `<tr><td colspan="4" class="p-6 text-center text-slate-500">Belum ada riwayat pencairan.</td></tr>` : wds.map(w => `
+                                        <tr class="hover:bg-slate-800/40 transition">
+                                            <td class="p-4">${w.date}</td>
+                                            <td class="p-4 text-emerald-400 font-bold">$ ${Number(w.usd_amount || 0).toFixed(2)}</td>
+                                            <td class="p-4">Rp ${Number(w.rate || 0).toLocaleString()}</td>
+                                            <td class="p-4 text-brand-400 font-bold">Rp ${Number(w.idr_result || 0).toLocaleString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+            window.unwithdrawnUSDTransactions = txs.filter(t => !t.withdrawn);
+        }
+
+        async function processWithdrawal(e) {
+            e.preventDefault();
+            let usdAmt = parseFloat(document.getElementById('wdAmount').value) || 0;
+            let rate = parseFloat(document.getElementById('wdRate').value) || 0;
+            let idrResult = usdAmt * rate;
+            let nowStr = new Date().toISOString().slice(0,19).replace('T', ' ');
+
+            await sb.from('withdrawals').insert([{ date: nowStr, usd_amount: usdAmt, rate, idr_result: idrResult }]);
+
+            // Tandai transaksi USD sebagai withdrawn
+            let remainingToWithdraw = usdAmt;
+            for(let t of window.unwithdrawnUSDTransactions) {
+                if(remainingToWithdraw <= 0) break;
+                let tAmount = Number(t.grand_total || 0);
+                if(remainingToWithdraw >= tAmount) {
+                    await sb.from('transactions').update({ withdrawn: true, idr_converted: tAmount * rate }).eq('id', t.id);
+                    remainingToWithdraw -= tAmount;
+                }
             }
 
-            closeModal('prodModal');
-            switchView(3);
+            alert("Pencairan dollar berhasil diproses!");
+            switchView(6);
         }
 
-        async function renderRawMaterials(c) {
-            let { data: raw } = await sb.from('raw_materials').select('*');
-            raw = raw || [];
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Bahan Baku</h3><p class="text-slate-400 text-sm">Total bahan baku: ${raw.length} item</p></div>`;
-        }
-        async function renderDiscounts(c) {
-            let { data: disc } = await sb.from('discounts').select('*');
-            disc = disc || [];
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Manajemen Diskon</h3><p class="text-slate-400 text-sm">Total diskon: ${disc.length}</p></div>`;
-        }
-        async function renderDollar(c) {
-            let { data: wd } = await sb.from('withdrawals').select('*');
-            wd = wd || [];
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pencairan Dollar</h3><p class="text-slate-400 text-sm">Riwayat pencairan: ${wd.length}</p></div>`;
-        }
-        async function renderAccounts(c) {
+        // --- 7. AKUN & ROLE ---
+        async function renderAccountsMenu(c) {
             let { data: users } = await sb.from('app_users').select('*');
             users = users || [];
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Akun & Role</h3><p class="text-slate-400 text-sm">Total user terdaftar: ${users.length}</p></div>`;
-        }
-        async function renderSettings(c) {
-            c.innerHTML = `<div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl"><h3 class="font-bold text-white mb-2">Pengaturan</h3><p class="text-slate-400 text-sm">Konfigurasi aplikasi.</p></div>`;
+
+            c.innerHTML = `
+                <div class="space-y-6">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-white text-base">Manajemen Akun Staff & Owner</h3>
+                        <button onclick="openModal('userModal')" class="bg-brand-600 hover:bg-brand-700 text-white px-4 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30"><i class="fa-solid fa-plus mr-1"></i> Tambah Staff</button>
+                    </div>
+                    <div class="glass-panel border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                        <div class="table-container">
+                            <table class="w-full text-left text-xs text-slate-300 whitespace-nowrap">
+                                <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider sticky top-0">
+                                    <tr>
+                                        <th class="p-4">Nama</th>
+                                        <th class="p-4">Username</th>
+                                        <th class="p-4">Role</th>
+                                        <th class="p-4 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                                    <tr class="hover:bg-slate-800/40 transition">
+                                        <td class="p-4 font-bold text-white">Owner Utama (Anda)</td>
+                                        <td class="p-4">admin</td>
+                                        <td class="p-4"><span class="bg-brand-600/20 text-brand-400 px-2.5 py-1 rounded-lg font-bold">OWNER</span></td>
+                                        <td class="p-4 text-center">-</td>
+                                    </tr>
+                                    ${users.map(u => `
+                                        <tr class="hover:bg-slate-800/40 transition">
+                                            <td class="p-4 font-bold text-white">${u.name}</td>
+                                            <td class="p-4">${u.username}</td>
+                                            <td class="p-4"><span class="bg-slate-800 text-slate-300 px-2.5 py-1 rounded-lg font-bold">${u.role}</span></td>
+                                            <td class="p-4 text-center">
+                                                <button onclick="deleteRow('app_users', ${u.id})" class="text-rose-400 hover:text-rose-300 p-2"><i class="fa-solid fa-trash"></i></button>
+                                            </td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODAL TAMBAH USER -->
+                <div id="userModal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 hidden">
+                    <div class="glass-panel border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl">
+                        <h3 class="font-bold text-white text-base mb-4">Tambah Akun Staff Baru</h3>
+                        <form onsubmit="saveUser(event)" class="space-y-4 text-xs">
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Nama Staff</label>
+                                <input type="text" id="uName" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="Kasir 1">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Username</label>
+                                <input type="text" id="uUser" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="kasir1">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">PIN</label>
+                                <input type="password" id="uPin" required class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white" placeholder="1234">
+                            </div>
+                            <div>
+                                <label class="block text-slate-300 uppercase font-semibold mb-1">Role</label>
+                                <select id="uRole" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white">
+                                    <option value="STAFF">STAFF</option>
+                                    <option value="KASIR">KASIR</option>
+                                </select>
+                            </div>
+                            <div class="flex justify-end gap-2.5 pt-4">
+                                <button type="button" onclick="closeModal('userModal')" class="px-4 py-2.5 rounded-xl border border-slate-700 text-slate-300">Batal</button>
+                                <button type="submit" class="px-5 py-2.5 rounded-xl bg-brand-600 text-white font-semibold shadow-lg shadow-brand-600/30">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
         }
 
+        async function saveUser(e) {
+            e.preventDefault();
+            let payload = {
+                name: document.getElementById('uName').value.trim(),
+                username: document.getElementById('uUser').value.trim(),
+                pin: document.getElementById('uPin').value.trim(),
+                role: document.getElementById('uRole').value
+            };
+            let { error } = await sb.from('app_users').insert([payload]);
+            if(error) alert('Gagal simpan user: ' + error.message);
+            else {
+                closeModal('userModal');
+                switchView(7);
+            }
+        }
+
+        // --- 8. PENGATURAN ---
+        async function renderSettingsMenu(c) {
+            c.innerHTML = `
+                <div class="space-y-6 max-w-xl">
+                    <div class="glass-panel border border-slate-800 p-6 rounded-2xl shadow-xl space-y-4">
+                        <h3 class="font-bold text-white text-base">Pengaturan Tampilan & Background Per Akun</h3>
+                        <div>
+                            <label class="block text-xs text-slate-300 uppercase font-semibold mb-2">URL Background Kustom (Opsional)</label>
+                            <input type="text" id="customBgInput" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="https://images.unsplash.com/...">
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="saveCustomBackground()" class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30">Terapkan Background</button>
+                            <button onclick="resetCustomBackground()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2.5 rounded-xl text-xs font-semibold">Reset Default</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function saveCustomBackground() {
+            let url = document.getElementById('customBgInput').value.trim();
+            if(url) {
+                localStorage.setItem(`gly_bg_${currentUser.username}`, url);
+                applyThemeAndBackground();
+                alert("Background berhasil diperbarui!");
+            }
+        }
+
+        function resetCustomBackground() {
+            localStorage.removeItem(`gly_bg_${currentUser.username}`);
+            applyThemeAndBackground();
+            alert("Background dikembalikan ke default.");
+        }
+
+        // --- UTILITIES ---
         function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
         function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-        
+
         async function deleteRow(table, id) {
             if(confirm('Yakin ingin menghapus data ini?')) {
-                const { error } = await sb.from(table).delete().eq('id', id);
-                if(error) {
-                    alert('Gagal menghapus: ' + error.message);
-                } else {
-                    switchView(currentActiveMenu);
-                }
+                let { error } = await sb.from(table).delete().eq('id', id);
+                if(error) alert('Gagal menghapus: ' + error.message);
+                else switchView(currentActiveMenu);
             }
         }
     </script>
